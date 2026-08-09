@@ -1,0 +1,138 @@
+# The API deployment. Sizing decision, the API is I/O bound on the provider fan-out and runs on
+# virtual threads, so its ceiling is memory and downstream latency far more than CPU. The requests
+# are modest and the limit leaves headroom for a burst of concurrent plans. The HPA scales on CPU
+# from 1 to 3 because CPU rises with request volume once the caches are warm, and 3 matches the
+# replica count the acceptance criteria drive to under load. These numbers are the starting point
+# to tune against a real k6 baseline, per PLAN.md, request latency based scaling through a custom
+# metric is the documented refinement once the baseline shows the true bottleneck.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: truecost
+  labels:
+    app: api
+spec:
+  replicas: 1
+  # maxUnavailable 0 keeps the old pod serving until the new one is ready, and maxSurge 1 brings the
+  # replacement up first, so a rollout or a kubectl rollout restart never drops below one ready
+  # replica, which is what makes the zero failed requests during a restart acceptance hold even at a
+  # single replica. minReadySeconds makes a pod prove it stays ready for a few seconds before it
+  # counts, so a pod that flaps ready then crashes cannot briefly become the only endpoint.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 5
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8080"
+    spec:
+      # A grace period long enough for Spring Boot graceful shutdown to drain in-flight plans after
+      # the pod leaves the Service endpoints.
+      terminationGracePeriodSeconds: 40
+      containers:
+        - name: api
+          image: truecost-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          lifecycle:
+            preStop:
+              # Pause before SIGTERM so kube-proxy has removed this pod from the Service endpoints
+              # across the cluster before the app starts shutting down, closing the small window
+              # where a node could still route a new request to a terminating pod.
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+          # A startup probe gives the JVM generous time to boot, up to 60 times 5 seconds, before the
+          # liveness and readiness probes take over, so a slow cold start under load is never killed
+          # by liveness. Once startup succeeds the readiness probe runs on a tight interval with no
+          # initial delay of its own.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: truecost
+  labels:
+    app: api
+spec:
+  selector:
+    app: api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api
+  namespace: truecost
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+---
+# Keeps at least one API pod serving through a voluntary disruption such as a node drain, so a
+# cluster maintenance operation cannot take the last replica down. The rolling update strategy
+# already covers the deploy path, the disruption budget covers the node lifecycle path.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api
+  namespace: truecost
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api

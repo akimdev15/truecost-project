@@ -1,0 +1,235 @@
+name: truecost
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: truecost-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: truecost
+      POSTGRES_USER: truecost
+      POSTGRES_PASSWORD: truecost
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U truecost -d truecost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: truecost-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:4.3.1
+    container_name: truecost-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # Two client listeners so both connection paths work. EXTERNAL advertises localhost:9092 for
+      # clients on the host, make run, kcat, the Testcontainers-free interactive workflow. INTERNAL
+      # advertises kafka:9094 for other containers on the compose network, the api and prefetcher
+      # services, which cannot reach localhost. A client that connected to the wrong advertised host
+      # would be handed back an unreachable address on metadata, hence the split.
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9094,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9094,EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  apicurio:
+    image: apicurio/apicurio-registry:3.2.6
+    container_name: truecost-apicurio
+    ports:
+      - "8081:8080"
+
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend:latest
+    container_name: truecost-osrm
+    # Host port 5001, not the OSRM default 5000, macOS AirPlay Receiver squats on 5000.
+    ports:
+      - "5001:5000"
+    volumes:
+      - ../data/osrm:/data
+    # Data is prepared once by scripts/osrm-setup.sh, wired to make osrm, not built by compose.
+    # mld is the multi level Dijkstra algorithm the prepare pipeline in osrm-setup.sh produces.
+    # The file name matches the Geofabrik us-northeast extract osrm-setup.sh downloads, see the
+    # runbook's OSRM section for the smaller clipped extract this development sandbox used
+    # instead under real memory constraints, and how to point this command at it locally.
+    command: osrm-routed --algorithm mld /data/nyc-metro.osrm
+    # The image ships no curl or wget, so the healthcheck opens a raw TCP connection to the
+    # HTTP listen port with a bash /dev/tcp redirect instead, confirming osrm-routed is bound
+    # and accepting connections. A true routing query check is documented in the runbook.
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/5000' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: truecost-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+
+  tempo:
+    image: grafana/tempo:2.7.1
+    container_name: truecost-tempo
+    ports:
+      - "3200:3200"
+      - "4318:4318"
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    command:
+      - -config.file=/etc/tempo.yaml
+
+  grafana:
+    image: grafana/grafana:11.5.1
+    container_name: truecost-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - tempo
+
+  # The three services below carry the "app" profile, so a plain make up brings up only the infra
+  # and the host-run workflow, make run plus make prefetch, is unchanged. make up-all enables the
+  # profile and runs the whole system in containers, the API, the prefetcher, and a one shot seed,
+  # wired to the infra by compose network service name rather than localhost.
+
+  seed:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: api
+    image: truecost-api
+    container_name: truecost-seed
+    # Loads the reference CSVs baked into the image, then exits. The api and prefetcher wait for this
+    # to complete so they never serve against an unseeded database.
+    environment:
+      SPRING_PROFILES_ACTIVE: seed
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/truecost
+      SPRING_DATASOURCE_USERNAME: truecost
+      SPRING_DATASOURCE_PASSWORD: truecost
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: api
+    image: truecost-api
+    container_name: truecost-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/truecost
+      SPRING_DATASOURCE_USERNAME: truecost
+      SPRING_DATASOURCE_PASSWORD: truecost
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9094
+      APICURIO_REGISTRY_URL: http://apicurio:8080/apis/registry/v3
+      TRUECOST_OSRM_BASE_URL: http://osrm:5000
+      TRUECOST_EVENTS_ENABLED: "true"
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0"
+    # The temurin jre image ships bash, so a /dev/tcp probe of the Actuator port is the dependency
+    # free readiness signal, no curl in the image. A real health assertion is in the runbook.
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      apicurio:
+        condition: service_started
+      seed:
+        condition: service_completed_successfully
+
+  prefetcher:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: prefetcher
+    image: truecost-prefetcher
+    container_name: truecost-prefetcher
+    ports:
+      - "8082:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/truecost
+      SPRING_DATASOURCE_USERNAME: truecost
+      SPRING_DATASOURCE_PASSWORD: truecost
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9094
+      APICURIO_REGISTRY_URL: http://apicurio:8080/apis/registry/v3
+      TRUECOST_OSRM_BASE_URL: http://osrm:5000
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      apicurio:
+        condition: service_started
+      seed:
+        condition: service_completed_successfully
+
+volumes:
+  postgres-data:
+  tempo-data:

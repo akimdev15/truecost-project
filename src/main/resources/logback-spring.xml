@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <springProfile name="prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <fieldNames>
+                    <logger>logger</logger>
+                </fieldNames>
+                <includeContext>false</includeContext>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+    <springProfile name="!prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <!-- traceId and spanId come from the MDC Micrometer Tracing populates, so a dev log
+                     line links to its span in Tempo. Empty when a line is outside any trace. -->
+                <pattern>%d{HH:mm:ss.SSS} %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+</configuration>

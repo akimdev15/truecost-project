@@ -1,0 +1,12 @@
+{
+  "originLat": 40.7505,
+  "originLng": -73.9934,
+  "pickupLocationCode": "EWR",
+  "destLat": 39.9500,
+  "destLng": -75.1600,
+  "destinationCode": "PHL",
+  "departureAt": "2026-08-07T22:00:00Z",
+  "returnAt": "2026-08-09T18:00:00Z",
+  "hasPersonalEzpass": false,
+  "carClass": "MIDSIZE"
+}

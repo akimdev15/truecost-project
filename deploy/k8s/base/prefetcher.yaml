@@ -1,0 +1,115 @@
+# The prefetcher deployment. Sizing decision, the prefetcher's load shape differs from the API. It
+# is a steady Kafka Streams worker whose windowed count materializes an in memory state store, so it
+# needs more memory headroom than the API and its CPU is steadier. Kafka Streams parallelism is
+# bounded by the partition count of trip-searches, which is three, so the HPA max is three, past that
+# extra replicas would sit idle with no partition to own. It scales on CPU because consumer and
+# processing work rises with search volume, and consumer group lag is the documented refinement
+# metric once a k6 baseline shows the real pressure point. It exposes no web endpoint of its own but
+# still serves Actuator for probes and the Prometheus scrape.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prefetcher
+  namespace: truecost
+  labels:
+    app: prefetcher
+spec:
+  replicas: 1
+  # The prefetcher is a stateful Kafka Streams worker off the request path, so its rollout uses the
+  # opposite trade from the API. maxUnavailable 1 with maxSurge 0 takes the old pod down and then
+  # brings the new one up, which is a single consumer group rebalance rather than the two a surge
+  # first rollout would cause. A brief gap in consuming is harmless here, the prefetcher only warms
+  # caches and captures snapshots, both idempotent, so nothing is lost while it is briefly absent.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  selector:
+    matchLabels:
+      app: prefetcher
+  template:
+    metadata:
+      labels:
+        app: prefetcher
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "8080"
+    spec:
+      # Kafka Streams needs time on shutdown to commit offsets and close its state store cleanly, so
+      # the grace period is generous and the app runs Spring graceful shutdown.
+      terminationGracePeriodSeconds: 45
+      containers:
+        - name: prefetcher
+          image: truecost-prefetcher:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          # Streams plus the registry handshake makes the prefetcher slower to boot than the API, so
+          # the startup probe allows up to 75 times 5 seconds before liveness and readiness take over.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 75
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 640Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prefetcher
+  namespace: truecost
+  labels:
+    app: prefetcher
+spec:
+  selector:
+    app: prefetcher
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: prefetcher
+  namespace: truecost
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: prefetcher
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

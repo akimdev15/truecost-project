@@ -1,0 +1,36 @@
+groups:
+  - name: truecost
+    rules:
+      # Request latency p95 above 300 milliseconds, the warm path target the k6 smoke asserts.
+      - alert: ApiP95LatencyHigh
+        expr: >
+          histogram_quantile(0.95,
+            sum by (le, uri) (rate(http_server_requests_seconds_bucket{service="api"}[1m]))) > 0.3
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API p95 latency above 300ms on {{ $labels.uri }}"
+
+      # A resilience4j circuit breaker has tripped open, a provider is being shed. resilience4j
+      # exports one gauge per state, the open one reads 1 while the breaker is open.
+      - alert: CircuitBreakerOpen
+        expr: resilience4j_circuitbreaker_state{state="open"} == 1
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker {{ $labels.name }} is OPEN"
+
+      # Cache hit rate collapse, the fraction of cache reads served from L1 or L2 has fallen below
+      # half over five minutes, which points at a cold cache, an eviction storm, or a Redis outage.
+      - alert: CacheHitRateCollapse
+        expr: >
+          sum(rate(truecost_cache_request_total{outcome=~"l1_hit|l2_hit"}[5m]))
+            /
+          sum(rate(truecost_cache_request_total[5m])) < 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cache hit rate below 50 percent over 5 minutes"

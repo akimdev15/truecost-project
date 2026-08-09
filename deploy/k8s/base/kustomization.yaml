@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - config.yaml
+  - infra.yaml
+  - api.yaml
+  - prefetcher.yaml
+  - observability.yaml
+
+# loadtest.yaml is deliberately not in resources, so kubectl apply -k does not start generating load
+# on every cluster bring up. It and its k6-scripts configMap, built from eval/k6/hpa-load.js so there
+# is one copy of the script, are applied on demand by make k8s-loadtest, see the runbook.
+configMapGenerator:
+  - name: grafana-datasources
+    namespace: truecost
+    files:
+      - grafana-datasources.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true

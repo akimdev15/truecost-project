@@ -1,0 +1,94 @@
+{
+  "namespace": "com.truecost.events",
+  "type": "record",
+  "name": "QuoteSnapshot",
+  "doc": "One fetched rental quote captured for the thesis accuracy analysis. Published to the quote-snapshots topic whenever a rental quote is fetched on either the synchronous path or the prefetch path, then written to the quote_snapshot table in Postgres by a dedicated consumer. Money fields are long cents to match the domain Money value type, so no Avro decimal is used.",
+  "fields": [
+    {
+      "name": "snapshotId",
+      "type": { "type": "string", "logicalType": "uuid" },
+      "doc": "Unique id for this snapshot row."
+    },
+    {
+      "name": "routeKey",
+      "type": "string",
+      "doc": "Route key the quote belongs to. Also the Kafka message key so all quotes for a route land on one partition and stay ordered."
+    },
+    {
+      "name": "originLat",
+      "type": "double",
+      "doc": "Origin latitude in decimal degrees, kept so analysis can join back to exact endpoints since the route key geohash is lossy."
+    },
+    {
+      "name": "originLng",
+      "type": "double",
+      "doc": "Origin longitude in decimal degrees."
+    },
+    {
+      "name": "destLat",
+      "type": "double",
+      "doc": "Destination latitude in decimal degrees."
+    },
+    {
+      "name": "destLng",
+      "type": "double",
+      "doc": "Destination longitude in decimal degrees."
+    },
+    {
+      "name": "company",
+      "type": "string",
+      "doc": "Rental company that produced the quote."
+    },
+    {
+      "name": "carClass",
+      "type": "string",
+      "doc": "Car class of this quote."
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "doc": "Source connector that produced the quote, for example synthetic or rapidapi, so accuracy analysis can separate synthetic from live data."
+    },
+    {
+      "name": "baseRateCents",
+      "type": "long",
+      "doc": "Base rental rate in whole cents."
+    },
+    {
+      "name": "taxesAndFeesCents",
+      "type": "long",
+      "doc": "Company taxes and fees in whole cents."
+    },
+    {
+      "name": "totalRentalCents",
+      "type": "long",
+      "doc": "Total rental cost in whole cents, base rate plus taxes and fees. This is the rental quote total, not the full trip true total."
+    },
+    {
+      "name": "pickupAt",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Rental pickup instant."
+    },
+    {
+      "name": "returnAt",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Rental return instant."
+    },
+    {
+      "name": "rentalDays",
+      "type": "int",
+      "doc": "Rental duration in days, kept so accuracy can be reported by trip length."
+    },
+    {
+      "name": "stale",
+      "type": "boolean",
+      "default": false,
+      "doc": "Whether the quote was served from a stale while revalidate read rather than a fresh fetch."
+    },
+    {
+      "name": "fetchedAt",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Instant the quote was fetched. This is the timestamp recorded in the snapshot table."
+    }
+  ]
+}

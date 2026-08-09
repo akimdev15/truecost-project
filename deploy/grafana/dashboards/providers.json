@@ -1,0 +1,54 @@
+{
+  "uid": "truecost-providers",
+  "title": "TrueCost Providers",
+  "tags": ["truecost"],
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Provider call p95 latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le, provider) (rate(truecost_provider_call_latency_seconds_bucket[1m])))",
+          "legendFormat": "{{provider}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Provider call outcomes per second",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (provider, outcome) (rate(truecost_provider_call_latency_seconds_count[1m]))",
+          "legendFormat": "{{provider}} {{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Circuit breaker state by provider",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "min": 0, "max": 1 } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (name, state) (resilience4j_circuitbreaker_state)",
+          "legendFormat": "{{name}} {{state}}"
+        }
+      ]
+    }
+  ]
+}

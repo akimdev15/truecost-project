@@ -1,0 +1,258 @@
+{
+  "options" : [ {
+    "companyCode" : "THRIFTY",
+    "companyName" : "Thrifty",
+    "carClassCode" : "MIDSIZE",
+    "rentalCents" : 10405,
+    "tollProgramFeeCents" : 4298,
+    "tollTotalCents" : 0,
+    "congestionCents" : 0,
+    "fuelCents" : 2139,
+    "hotelCents" : 24762,
+    "trueTotalCents" : 41604,
+    "strategy" : {
+      "kind" : "COMPANY_UNLIMITED",
+      "programName" : "PlatePass All-Inclusive",
+      "totalCents" : 4298,
+      "explanation" : "Thrifty PlatePass All-Inclusive wins at 42.98. Next best is Thrifty PlatePass per-crossing at 63.98, a margin of 21.00. The flat unlimited plan fee of 42.98 covers every toll, which comes out cheaper than paying per crossing here.",
+      "candidates" : [ {
+        "strategy" : "COMPANY_UNLIMITED",
+        "programName" : "PlatePass All-Inclusive",
+        "totalCents" : 4298,
+        "feeCents" : 4298,
+        "tollCents" : 0,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      }, {
+        "strategy" : "COMPANY_PER_CROSSING",
+        "programName" : "PlatePass",
+        "totalCents" : 6398,
+        "feeCents" : 1998,
+        "tollCents" : 4400,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      } ]
+    },
+    "provenance" : {
+      "rentalSource" : "SYNTHETIC",
+      "fuelPriceIsFallback" : true,
+      "hotelSource" : "SYNTHETIC"
+    },
+    "partial" : true
+  }, {
+    "companyCode" : "DOLLAR",
+    "companyName" : "Dollar",
+    "carClassCode" : "MIDSIZE",
+    "rentalCents" : 10435,
+    "tollProgramFeeCents" : 4298,
+    "tollTotalCents" : 0,
+    "congestionCents" : 0,
+    "fuelCents" : 2139,
+    "hotelCents" : 24762,
+    "trueTotalCents" : 41634,
+    "strategy" : {
+      "kind" : "COMPANY_UNLIMITED",
+      "programName" : "PlatePass All-Inclusive",
+      "totalCents" : 4298,
+      "explanation" : "Dollar PlatePass All-Inclusive wins at 42.98. Next best is Dollar PlatePass per-crossing at 63.98, a margin of 21.00. The flat unlimited plan fee of 42.98 covers every toll, which comes out cheaper than paying per crossing here.",
+      "candidates" : [ {
+        "strategy" : "COMPANY_UNLIMITED",
+        "programName" : "PlatePass All-Inclusive",
+        "totalCents" : 4298,
+        "feeCents" : 4298,
+        "tollCents" : 0,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      }, {
+        "strategy" : "COMPANY_PER_CROSSING",
+        "programName" : "PlatePass",
+        "totalCents" : 6398,
+        "feeCents" : 1998,
+        "tollCents" : 4400,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      } ]
+    },
+    "provenance" : {
+      "rentalSource" : "SYNTHETIC",
+      "fuelPriceIsFallback" : true,
+      "hotelSource" : "SYNTHETIC"
+    },
+    "partial" : true
+  }, {
+    "companyCode" : "BUDGET",
+    "companyName" : "Budget",
+    "carClassCode" : "MIDSIZE",
+    "rentalCents" : 10867,
+    "tollProgramFeeCents" : 5198,
+    "tollTotalCents" : 0,
+    "congestionCents" : 0,
+    "fuelCents" : 2139,
+    "hotelCents" : 24762,
+    "trueTotalCents" : 42966,
+    "strategy" : {
+      "kind" : "COMPANY_UNLIMITED",
+      "programName" : "e-Toll Unlimited",
+      "totalCents" : 5198,
+      "explanation" : "Budget e-Toll Unlimited wins at 51.98. Next best is Budget e-Toll per-crossing at 57.90, a margin of 5.92. The flat unlimited plan fee of 51.98 covers every toll, which comes out cheaper than paying per crossing here.",
+      "candidates" : [ {
+        "strategy" : "COMPANY_UNLIMITED",
+        "programName" : "e-Toll Unlimited",
+        "totalCents" : 5198,
+        "feeCents" : 5198,
+        "tollCents" : 0,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      }, {
+        "strategy" : "COMPANY_PER_CROSSING",
+        "programName" : "e-Toll",
+        "totalCents" : 5790,
+        "feeCents" : 1390,
+        "tollCents" : 4400,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      } ]
+    },
+    "provenance" : {
+      "rentalSource" : "SYNTHETIC",
+      "fuelPriceIsFallback" : true,
+      "hotelSource" : "SYNTHETIC"
+    },
+    "partial" : true
+  }, {
+    "companyCode" : "ENTERPRISE",
+    "companyName" : "Enterprise",
+    "carClassCode" : "MIDSIZE",
+    "rentalCents" : 12213,
+    "tollProgramFeeCents" : 990,
+    "tollTotalCents" : 4376,
+    "congestionCents" : 0,
+    "fuelCents" : 2139,
+    "hotelCents" : 24762,
+    "trueTotalCents" : 44480,
+    "strategy" : {
+      "kind" : "COMPANY_PER_CROSSING",
+      "programName" : "TollPass",
+      "totalCents" : 5366,
+      "explanation" : "Enterprise TollPass per-crossing wins at 53.66 as the only toll strategy evaluated for this rental option.",
+      "candidates" : [ {
+        "strategy" : "COMPANY_PER_CROSSING",
+        "programName" : "TollPass",
+        "totalCents" : 5366,
+        "feeCents" : 990,
+        "tollCents" : 4376,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      } ]
+    },
+    "provenance" : {
+      "rentalSource" : "SYNTHETIC",
+      "fuelPriceIsFallback" : true,
+      "hotelSource" : "SYNTHETIC"
+    },
+    "partial" : true
+  }, {
+    "companyCode" : "AVIS",
+    "companyName" : "Avis",
+    "carClassCode" : "MIDSIZE",
+    "rentalCents" : 13765,
+    "tollProgramFeeCents" : 5198,
+    "tollTotalCents" : 0,
+    "congestionCents" : 0,
+    "fuelCents" : 2139,
+    "hotelCents" : 24762,
+    "trueTotalCents" : 45864,
+    "strategy" : {
+      "kind" : "COMPANY_UNLIMITED",
+      "programName" : "e-Toll Unlimited",
+      "totalCents" : 5198,
+      "explanation" : "Avis e-Toll Unlimited wins at 51.98. Next best is Avis e-Toll per-crossing at 57.90, a margin of 5.92. The flat unlimited plan fee of 51.98 covers every toll, which comes out cheaper than paying per crossing here.",
+      "candidates" : [ {
+        "strategy" : "COMPANY_UNLIMITED",
+        "programName" : "e-Toll Unlimited",
+        "totalCents" : 5198,
+        "feeCents" : 5198,
+        "tollCents" : 0,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      }, {
+        "strategy" : "COMPANY_PER_CROSSING",
+        "programName" : "e-Toll",
+        "totalCents" : 5790,
+        "feeCents" : 1390,
+        "tollCents" : 4400,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      } ]
+    },
+    "provenance" : {
+      "rentalSource" : "SYNTHETIC",
+      "fuelPriceIsFallback" : true,
+      "hotelSource" : "SYNTHETIC"
+    },
+    "partial" : true
+  }, {
+    "companyCode" : "HERTZ",
+    "companyName" : "Hertz",
+    "carClassCode" : "MIDSIZE",
+    "rentalCents" : 13397,
+    "tollProgramFeeCents" : 5598,
+    "tollTotalCents" : 0,
+    "congestionCents" : 0,
+    "fuelCents" : 2139,
+    "hotelCents" : 24762,
+    "trueTotalCents" : 45896,
+    "strategy" : {
+      "kind" : "COMPANY_UNLIMITED",
+      "programName" : "PlatePass All-Inclusive",
+      "totalCents" : 5598,
+      "explanation" : "Hertz PlatePass All-Inclusive wins at 55.98. Next best is Hertz PlatePass per-crossing at 63.98, a margin of 8.00. The flat unlimited plan fee of 55.98 covers every toll, which comes out cheaper than paying per crossing here.",
+      "candidates" : [ {
+        "strategy" : "COMPANY_UNLIMITED",
+        "programName" : "PlatePass All-Inclusive",
+        "totalCents" : 5598,
+        "feeCents" : 5598,
+        "tollCents" : 0,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      }, {
+        "strategy" : "COMPANY_PER_CROSSING",
+        "programName" : "PlatePass",
+        "totalCents" : 6398,
+        "feeCents" : 1998,
+        "tollCents" : 4400,
+        "congestionCents" : 0,
+        "feeDays" : 2
+      } ]
+    },
+    "provenance" : {
+      "rentalSource" : "SYNTHETIC",
+      "fuelPriceIsFallback" : true,
+      "hotelSource" : "SYNTHETIC"
+    },
+    "partial" : true
+  } ],
+  "recommendation" : {
+    "companyCode" : "THRIFTY",
+    "carClassCode" : "MIDSIZE",
+    "trueTotalCents" : 41604,
+    "savingsOverNextCents" : 30,
+    "summary" : "Thrifty MIDSIZE is the cheapest option at $416.04 all in, saving $0.30 over the next best option. Thrifty PlatePass All-Inclusive wins at 42.98. Next best is Thrifty PlatePass per-crossing at 63.98, a margin of 21.00. The flat unlimited plan fee of 42.98 covers every toll, which comes out cheaper than paying per crossing here."
+  },
+  "context" : {
+    "rentalDays" : 2,
+    "totalDistanceMiles" : 186.4113576712002,
+    "tollClass" : "PASSENGER",
+    "outboundRouteHash" : "dr5ru4-dr4e38",
+    "returnRouteHash" : "dr4e38-dr5ru4",
+    "departureBucket" : "2026072418",
+    "returnBucket" : "2026072614",
+    "dateBucket" : "2026-07-24"
+  },
+  "freshness" : {
+    "route" : "FRESH",
+    "tolls" : "FRESH",
+    "fuel" : "UNAVAILABLE",
+    "hotel" : "FRESH"
+  }
+}

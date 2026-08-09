@@ -1,0 +1,8 @@
+# Dev profile overrides. Full trace sampling against the local Tempo the compose stack runs, so a
+# make run plus make prefetch produces complete traces across the provider fan-out, OSRM, Redis,
+# Postgres, and the Kafka hop to the prefetcher. Production would lower this probability and keep
+# the parent based sampler so a sampled trace stays whole across the message boundary.
+management:
+  tracing:
+    sampling:
+      probability: 1.0

@@ -1,0 +1,135 @@
+spring:
+  application:
+    name: truecost
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/truecost
+    username: truecost
+    password: truecost
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.apicurio.registry.serde.avro.AvroKafkaSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.apicurio.registry.serde.avro.AvroKafkaDeserializer
+      auto-offset-reset: earliest
+      properties:
+        apicurio.registry.use-specific-avro-reader: true
+    properties:
+      # A simple env placeholder rather than overriding this map key directly, a map key that
+      # contains dots does not bind cleanly from an underscored environment variable, so Kubernetes
+      # sets APICURIO_REGISTRY_URL instead of a SPRING_KAFKA_PROPERTIES_ variable.
+      apicurio.registry.url: ${APICURIO_REGISTRY_URL:http://localhost:8081/apis/registry/v3}
+      apicurio.registry.auto-register: true
+
+server:
+  port: 8080
+  # Graceful shutdown lets in-flight requests finish before the server stops, which together with
+  # the Kubernetes preStop drain and the termination grace period gives a zero failed request
+  # rolling restart. Harmless on the prefetcher, which runs no web server.
+  shutdown: graceful
+
+truecost:
+  osrm:
+    base-url: http://localhost:5001
+    timeout-seconds: 5
+  providers:
+    rental:
+      rapidapi:
+        enabled: false
+        base-url: https://car-rental-prices.p.rapidapi.com
+        api-key: ${RAPIDAPI_KEY:}
+        api-host: car-rental-prices.p.rapidapi.com
+        timeout-seconds: 2
+    fuel:
+      eia:
+        enabled: false
+        base-url: https://api.eia.gov/v2/petroleum/pri/gnd/data/
+        api-key: ${EIA_API_KEY:}
+        timeout-seconds: 2
+      fallback-price-per-gallon: 3.50
+    hotel:
+      amadeus:
+        enabled: false
+        base-url: https://test.api.amadeus.com
+        client-id: ${AMADEUS_CLIENT_ID:}
+        client-secret: ${AMADEUS_CLIENT_SECRET:}
+        timeout-seconds: 2
+  events:
+    enabled: false
+  kafka:
+    topics:
+      trip-searches:
+        name: trip-searches
+        partitions: 3
+        replication-factor: 1
+        retention-ms: 86400000
+      hot-routes:
+        name: hot-routes
+        partitions: 1
+        replication-factor: 1
+        retention-ms: 86400000
+      quote-snapshots:
+        name: quote-snapshots
+        partitions: 3
+        replication-factor: 1
+        retention-ms: 604800000
+  stream:
+    application-id: truecost-prefetcher
+    window-size-minutes: 15
+    hop-minutes: 5
+    grace-minutes: 1
+    hotness-threshold: 5
+    prefetch-lead-fraction: 0.8
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 4
+        minimum-number-of-calls: 4
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,loggers,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  tracing:
+    sampling:
+      # Off by default so tests and a plain run emit no spans, the dev profile turns it fully on.
+      probability: 0.0
+  otlp:
+    tracing:
+      endpoint: ${TRUECOST_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
+logging:
+  level:
+    root: INFO

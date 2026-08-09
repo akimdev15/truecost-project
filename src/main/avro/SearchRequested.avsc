@@ -1,0 +1,81 @@
+{
+  "namespace": "com.truecost.events",
+  "type": "record",
+  "name": "SearchRequested",
+  "doc": "Emitted once per user trip search. The route key is used as the Kafka message key. Consumed by the Kafka Streams topology that windows and counts searches per route and date bucket to detect hot routes.",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": { "type": "string", "logicalType": "uuid" },
+      "doc": "Unique id for this search event, used for tracing and idempotency."
+    },
+    {
+      "name": "routeKey",
+      "type": "string",
+      "doc": "Stable identifier for the origin, destination, and date bucket combination. The same value is used as the Kafka message key so co partitioning holds across topics."
+    },
+    {
+      "name": "dateBucket",
+      "type": "string",
+      "doc": "Coarse travel date bucket the search falls into, for example an ISO date or a weekend label, used as a secondary grouping dimension in the windowed count."
+    },
+    {
+      "name": "originLat",
+      "type": "double",
+      "doc": "Origin latitude in decimal degrees."
+    },
+    {
+      "name": "originLng",
+      "type": "double",
+      "doc": "Origin longitude in decimal degrees."
+    },
+    {
+      "name": "destLat",
+      "type": "double",
+      "doc": "Destination latitude in decimal degrees."
+    },
+    {
+      "name": "destLng",
+      "type": "double",
+      "doc": "Destination longitude in decimal degrees."
+    },
+    {
+      "name": "departureAt",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Planned departure instant, needed by the prefetch consumer to price time bucketed tolls."
+    },
+    {
+      "name": "returnAt",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Planned return instant, needed to derive rental duration for the quote refresh."
+    },
+    {
+      "name": "hasPersonalEzpass",
+      "type": "boolean",
+      "doc": "Whether the searching user declared a personal E-ZPass, carried so prefetch can warm the strategy relevant inputs."
+    },
+    {
+      "name": "carClass",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Optional requested car class. Null means the search did not constrain the class and all classes are candidates."
+    },
+    {
+      "name": "pickupLocationCode",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Rental pickup location code, an airport or city code such as EWR, needed so the prefetch consumer can warm rental quotes on the same cache key the synchronous path uses. Optional with a null default so this field is a BACKWARD compatible addition."
+    },
+    {
+      "name": "destinationCode",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Hotel destination code such as PHL, needed so the prefetch consumer can warm hotel offers on the same cache key the synchronous path uses. Optional with a null default so this field is a BACKWARD compatible addition."
+    },
+    {
+      "name": "occurredAt",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Instant the search was received by the API. This is the event time used for windowing."
+    }
+  ]
+}

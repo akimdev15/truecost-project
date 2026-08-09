@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    name: build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      # verify runs the full suite, the unit tests and the Testcontainers integration tests, which
+      # need Docker, and GitHub hosted runners ship Docker, so Postgres, Redis, Kafka, and Apicurio
+      # come up in containers. verify also runs the two repackage executions, so it proves the API
+      # and prefetcher boot jars still build.
+      - name: verify
+        run: ./mvnw -B verify
+
+  manifests:
+    name: validate kubernetes manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # kubectl on the runner renders the kustomize base, which fails the job if any manifest is
+      # malformed or a reference does not resolve.
+      - name: render kustomize base
+        run: kubectl kustomize deploy/k8s/base > /dev/null
+
+  images:
+    name: build container images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Build both image targets so a broken Dockerfile or a missing runtime file, like the seed
+      # CSVs, fails CI rather than being found at deploy time. No push, this only proves they build.
+      - name: build api image
+        run: docker build --target api -t truecost-api:ci -f deploy/Dockerfile .
+      - name: build prefetcher image
+        run: docker build --target prefetcher -t truecost-prefetcher:ci -f deploy/Dockerfile .

@@ -1,0 +1,91 @@
+{
+  "namespace": "com.truecost.events",
+  "type": "record",
+  "name": "HotRouteSignal",
+  "doc": "Emitted to the hot-routes topic when a route and date bucket exceeds the search count threshold within a hopping window. Consumed by the prefetch consumer, which refreshes rental quotes and priced tolls in Redis ahead of TTL expiry.",
+  "fields": [
+    {
+      "name": "routeKey",
+      "type": "string",
+      "doc": "Route key that crossed the threshold. Also the Kafka message key."
+    },
+    {
+      "name": "dateBucket",
+      "type": "string",
+      "doc": "Travel date bucket that was counted alongside the route key."
+    },
+    {
+      "name": "windowStart",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Start instant of the hopping window that produced this signal."
+    },
+    {
+      "name": "windowEnd",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "End instant of the hopping window that produced this signal."
+    },
+    {
+      "name": "searchCount",
+      "type": "long",
+      "doc": "Number of searches counted for this route key and date bucket inside the window."
+    },
+    {
+      "name": "threshold",
+      "type": "int",
+      "doc": "Configured hotness threshold that was exceeded, carried for observability and thesis reporting."
+    },
+    {
+      "name": "originLat",
+      "type": "double",
+      "doc": "Representative origin latitude for the route, used by the prefetch consumer to refetch."
+    },
+    {
+      "name": "originLng",
+      "type": "double",
+      "doc": "Representative origin longitude for the route."
+    },
+    {
+      "name": "destLat",
+      "type": "double",
+      "doc": "Representative destination latitude for the route."
+    },
+    {
+      "name": "destLng",
+      "type": "double",
+      "doc": "Representative destination longitude for the route."
+    },
+    {
+      "name": "departureAt",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Representative departure instant for the route, used to price time bucketed tolls during prefetch."
+    },
+    {
+      "name": "returnAt",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Representative return instant, used to derive rental duration during prefetch."
+    },
+    {
+      "name": "carClass",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Representative car class if the hot searches constrained one, otherwise null to prefetch all classes."
+    },
+    {
+      "name": "pickupLocationCode",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Representative rental pickup location code, carried so the prefetch consumer can reconstruct a full plan and warm rental quotes. Optional with a null default for BACKWARD compatible evolution."
+    },
+    {
+      "name": "destinationCode",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Representative hotel destination code, carried so the prefetch consumer can warm hotel offers. Optional with a null default for BACKWARD compatible evolution."
+    },
+    {
+      "name": "emittedAt",
+      "type": { "type": "long", "logicalType": "timestamp-millis" },
+      "doc": "Instant the signal was emitted by the topology."
+    }
+  ]
+}

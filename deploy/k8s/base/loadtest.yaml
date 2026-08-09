@@ -1,0 +1,26 @@
+# In cluster load generator for the HPA scale test, PLAN Phase 8 acceptance criterion three. This
+# Job runs the k6 ramp against the api Service from inside the cluster, so the HPA scale up and down
+# can be watched with kubectl get hpa without any host side tooling or port-forward. The k6 script is
+# mounted from a configMap generated in kustomization.yaml from eval/k6/hpa-load.js, one source of
+# truth for the script. Not applied by default, run it on demand, see the runbook.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hpa-load
+  namespace: truecost
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: grafana/k6:0.58.0
+          args: ["run", "/scripts/hpa-load.js"]
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+      volumes:
+        - name: script
+          configMap:
+            name: k6-scripts

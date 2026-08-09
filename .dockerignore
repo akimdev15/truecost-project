@@ -1,0 +1,12 @@
+# Keep the docker build context small and the images clean. The build stage compiles from source,
+# so nothing prebuilt or local needs to ship into the context.
+target/
+data/osrm/
+.git/
+.idea/
+.settings/
+.classpath
+.project
+HANDOFF.md
+*.iml
+.DS_Store

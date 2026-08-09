@@ -1,0 +1,21 @@
+# Single binary Tempo for local tracing, the backend chosen in docs/design/observability-design.md.
+# It receives spans over OTLP HTTP on 4318, the endpoint the application's OTLP exporter targets, and
+# stores traces on a local volume, which is enough for development and thesis demonstration. The kind
+# overlay would point the storage backend at object storage instead.
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/blocks
+    wal:
+      path: /var/tempo/wal

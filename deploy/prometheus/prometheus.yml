@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # The API and the prefetcher run on the host through make run and make prefetch, so Prometheus in
+  # the compose network reaches them over host.docker.internal. The prefetcher runs on 8082 to avoid
+  # the API's 8080, see make prefetch. In the kind overlay these become in cluster service targets.
+  - job_name: truecost-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+        labels:
+          service: api
+  - job_name: truecost-prefetcher
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:8082"]
+        labels:
+          service: prefetcher
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

@@ -1,0 +1,66 @@
+{
+  "uid": "truecost-cache",
+  "title": "TrueCost Cache Effectiveness",
+  "tags": ["truecost"],
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Cache hit rate",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(truecost_cache_request_total{outcome=~\"l1_hit|l2_hit\"}[5m])) / clamp_min(sum(rate(truecost_cache_request_total[5m])), 1)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Cache reads by outcome per second",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (class, outcome) (rate(truecost_cache_request_total[1m]))",
+          "legendFormat": "{{class}} {{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Singleflight coalesced loads per second",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (class) (rate(truecost_cache_singleflight_coalesced_total[1m]))",
+          "legendFormat": "{{class}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Stale served per second",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (class) (rate(truecost_cache_stale_served_total[1m]))",
+          "legendFormat": "{{class}}"
+        }
+      ]
+    }
+  ]
+}

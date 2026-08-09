@@ -1,0 +1,19 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      # Correlate a trace to its logs and metrics by trace id, the correlation format in the
+      # observability design. Log lines carry the trace id so a span links straight to its logs.
+      tracesToLogsV2:
+        datasourceUid: prometheus

@@ -1,0 +1,206 @@
+# In cluster Postgres, Redis, Kafka, and Apicurio for the deployment exercise, per PLAN.md Phase 8.
+# These are single replica and back onto emptyDir, they exist to exercise the deployment topology and
+# the two app Deployments against real dependencies, not to be a production data tier. A real cluster
+# would run these as StatefulSets with persistent volumes or use managed services. OSRM is not run in
+# cluster, its multi gigabyte prepared extract is a mounted volume concern, so route and toll warming
+# degrade to partial in the cluster while rental, fuel, and hotel serve normally.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: truecost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: truecost
+            - name: POSTGRES_USER
+              value: truecost
+            - name: POSTGRES_PASSWORD
+              value: truecost
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "truecost", "-d", "truecost"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: truecost
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: truecost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: truecost
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: truecost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: apache/kafka:4.3.1
+          ports:
+            - containerPort: 9092
+          env:
+            - name: KAFKA_NODE_ID
+              value: "1"
+            - name: KAFKA_PROCESS_ROLES
+              value: broker,controller
+            - name: KAFKA_LISTENERS
+              value: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: PLAINTEXT://kafka:9092
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: CONTROLLER
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: 1@localhost:9093
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "1"
+            - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+              value: "0"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: truecost
+spec:
+  selector:
+    app: kafka
+  ports:
+    - port: 9092
+      targetPort: 9092
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apicurio
+  namespace: truecost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apicurio
+  template:
+    metadata:
+      labels:
+        app: apicurio
+    spec:
+      containers:
+        - name: apicurio
+          image: apicurio/apicurio-registry:3.2.6
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apicurio
+  namespace: truecost
+spec:
+  selector:
+    app: apicurio
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# One shot reference data seed. Runs the API image under the seed profile, which loads the CSVs
+# baked into the image and exits. Kubernetes retries it until Postgres is ready.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed
+  namespace: truecost
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: seed
+          image: truecost-api:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: seed

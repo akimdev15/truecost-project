@@ -1,0 +1,12 @@
+company_code,company_name,program_name,program_type,daily_fee_cents,fee_day_basis,fee_requires_usage,cap_cents,tolls_included,toll_rate_basis,covers_congestion,effective_date
+HERTZ,Hertz,PlatePass,USAGE_DAY,999,USAGE_DAYS,true,,false,MAX_CASH_RATE,false,2026-07-17
+HERTZ,Hertz,PlatePass All-Inclusive,UNLIMITED_DAILY,2799,RENTAL_DAYS,false,,true,,false,2026-07-17
+AVIS,Avis,e-Toll,ALL_RENTAL_DAYS,695,RENTAL_DAYS,true,3495,false,MAX_CASH_RATE,false,2026-07-17
+AVIS,Avis,e-Toll Unlimited,UNLIMITED_DAILY,2599,RENTAL_DAYS,false,,true,,false,2026-07-17
+BUDGET,Budget,e-Toll,ALL_RENTAL_DAYS,695,RENTAL_DAYS,true,3475,false,MAX_CASH_RATE,false,2026-07-17
+BUDGET,Budget,e-Toll Unlimited,UNLIMITED_DAILY,2599,RENTAL_DAYS,false,,true,,false,2026-07-17
+DOLLAR,Dollar,PlatePass,USAGE_DAY,999,USAGE_DAYS,true,,false,MAX_CASH_RATE,false,2026-07-17
+DOLLAR,Dollar,PlatePass All-Inclusive,UNLIMITED_DAILY,2149,RENTAL_DAYS,false,,true,,false,2026-07-17
+THRIFTY,Thrifty,PlatePass,USAGE_DAY,999,USAGE_DAYS,true,,false,MAX_CASH_RATE,false,2026-07-17
+THRIFTY,Thrifty,PlatePass All-Inclusive,UNLIMITED_DAILY,2149,RENTAL_DAYS,false,,true,,false,2026-07-17
+ENTERPRISE,Enterprise,TollPass,USAGE_DAY,495,USAGE_DAYS,true,3465,false,EZPASS_RATE,false,2026-07-17
