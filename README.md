@@ -2,7 +2,9 @@
 
 A real-time, all-in cost planner for weekend car rental trips out of New York City.
 
-You enter an origin, a destination, travel dates, and whether you own a personal E-ZPass. TrueCost computes the true total for every rental option, base rate, route tolls, congestion pricing, fuel, and hotel, and decides per option whether your own E-ZPass, the company per-crossing fee, or the company unlimited toll plan is cheapest for that exact route and rental length. Every option is ranked by true total and the cheapest is recommended.
+You enter an origin, a destination, travel dates, whether you own a personal E-ZPass, and the base rate each rental company quoted you. TrueCost computes the true total for every option, base rate, route tolls, congestion pricing, fuel, and hotel, and decides per option whether your own E-ZPass, the company per-crossing fee, or the company unlimited toll plan is cheapest for that exact route and rental length. Every option is ranked by true total and the cheapest is recommended.
+
+Base rates are user-supplied because no free licensed rental pricing API exists, and the alternatives were an unofficial third-party connector or scraping. Everything else, route tolls, congestion pricing, toll program terms, fuel, and hotel, is fetched or computed from a real source.
 
 ## Tech stack
 
