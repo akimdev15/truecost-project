@@ -32,6 +32,14 @@ and catching places where a document had drifted out of sync with the code.
 **Terminology and reference checking.** Confirming a pattern has the name I am giving it, and
 locating the primary source when I know the fact but not the citation.
 
+**Version control operations.** Staging, commit message drafting, tagging, and the occasional
+history operation. This is worth stating plainly because a commit carries my name as author, so
+a reader is entitled to know how it was produced. The rules I hold to are that files are staged
+by explicit path and never with a bare `git add .`, that I read the diff of anything staged on my
+behalf, that commit messages say what I would say, and that I run pushes to a shared remote
+myself rather than delegating them. No commit in this repository has a `Co-Authored-By` trailer,
+which is a deliberate convention recorded in `docs/ENGINEERING.md` rather than an omission.
+
 ## What I did without assistance
 
 Choosing the problem and deciding it was worth a thesis. The toll strategy logic, which is the
@@ -46,7 +54,19 @@ have to prove.
 | --- | --- | --- | --- | --- |
 | Phases 0 to 8 | Jul to Aug 2026 | Implementation to written specifications, test scaffolding, runbook and design record drafting | Every design record, the schema, the Kafka topology, the strategy semantics, the seed data and its provenance | 94 tests against real containers, every runbook command run before commit |
 | Hard Stop 1 and 2 packages | Sep 2026 | Document drafting, diagram generation, cross reference checking | Content, decisions, requirement set, risk judgements | Claims traced back to the repository before submission |
-| Sprint 1 check-in | 4 Oct 2026 | Repository audit against the rubric, drafting the engineering logs in this directory, the `make smoke` target, and the `osrm-setup.sh` fix | Accepting or rejecting each finding, the risk severities and owners, the reflection and its conclusions | Full `mvnw verify` run and captured, live stack probe captured, every claim in the check-in checked against the tree |
+| Sprint 1 check-in | 4 Oct 2026 | Repository audit against the rubric, drafting the engineering logs in this directory, the `make smoke` target, the `osrm-setup.sh` fixes, and the five baseline commits and the annotated tag | Accepting or rejecting each finding, the risk severities and owners, the reflection and its conclusions, the decision to commit and what to push | Full `mvnw verify` run captured, live stack smoke captured, k6 load run captured, every claim checked against the tree |
+
+### Version control detail for Sprint 1
+
+Recorded at this level of detail once, as the pattern for later sprints.
+
+| Operation | How it was done |
+| --- | --- |
+| Staging | Five groups staged by explicit path. No `git add .`, which matters here because the working tree of the submission repository also holds course documents that must not be committed |
+| Commit messages | Drafted by the assistant to the two sentence convention, reviewed before committing, no `Co-Authored-By` trailer |
+| Tag | `v0.1.0-baseline`, annotated, message carrying the verified test and load numbers and naming what is not built |
+| Push | Mine. The assistant was told not to push the full phase history to the public repository, and that instruction held |
+| History rewrite | None this sprint. The `backup-` prefixed local branches are from an earlier cleanup and are never pushed |
 
 ## Findings the assistant surfaced in Sprint 1
 
