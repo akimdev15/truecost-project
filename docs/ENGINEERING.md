@@ -43,8 +43,12 @@ and `stream` the prefetcher deployable.
 | Make target | lowercase, hyphenated verb | `make k6-smoke` |
 | Git tag | `v<major>.<minor>.<patch>` plus an optional label | `v0.1.0-baseline` |
 
-`make itest` relies on the integration test suffix, so the naming rule for tests is load bearing
-rather than cosmetic.
+`make itest` filters on the integration test suffix, so this naming rule is meant to be load
+bearing rather than cosmetic. It is not yet, and that gap is worth stating plainly. Twelve test
+classes start real containers, and only three of them carry the `IntegrationTest` suffix, so
+`make itest` currently runs a subset of the integration suite and still reports success.
+Renaming the other nine is tracked as I-12 in `docs/RISK_LOG.md`. Until that lands, `make test`
+is the command that actually runs everything.
 
 ## Branch strategy
 

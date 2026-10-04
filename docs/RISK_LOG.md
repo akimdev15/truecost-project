@@ -61,6 +61,7 @@ things that might happen.
 | I-09 | Boston and Washington DC routes resolve to a path that stops at the clipped map boundary rather than failing, which looks like a short route rather than an error | Medium | Folded into I-01. The coverage check rejects these before routing is interpreted | Chung Hyun Kim | Open |
 | I-10 | No live rental, fuel, or hotel credentials are configured, so those paths run on documented fallbacks | Low | Accepted by design. Rental rates are user supplied, fuel and hotel tag fallback responses UNAVAILABLE | Chung Hyun Kim | Accepted, not a defect |
 | I-11 | `make osrm` re-ran the multi minute `osrm-extract` stage on every invocation. The skip check looked for a bare `.osrm` file, which OSRM never writes, it writes a set of files sharing that base name | Medium | The completion marker is now `.osrm.ebg`, a file the stage actually produces. A no-op run is 2 seconds | Chung Hyun Kim | Fixed this sprint |
+| I-12 | `make itest` filters on a `*IntegrationTest` suffix that only 3 of the 12 container backed test classes use, so it runs a subset of the integration suite and still reports success | Medium | Rename the other nine classes to the suffix, or change the filter to a JUnit tag. `make test` runs everything in the meantime | Chung Hyun Kim | Open, Sprint 2 |
 
 ## Review cadence
 
