@@ -2,6 +2,9 @@ TrueCost, full build and test run
 Captured 4 October 2026 for the Sprint 1 baseline check-in
 Command: ./mvnw -B verify
 Host: macOS 25.5.0, Corretto 21.0.11, Docker 29.8.0
+Captured in the development working tree, whose src/ is byte identical to this
+repository, which is why the packaged artifact paths below read truecost rather
+than truecost-project. Rerun ./mvnw -B verify here to reproduce.
 
 ===== per class results =====
 Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.548 s -- in com.truecost.cache.TwoTierCacheStaleTest

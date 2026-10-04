@@ -54,7 +54,9 @@ as a unit.
 - `main` is always buildable. CI runs on every push to every branch and on every pull request.
 - A phase from PLAN.md gets its own branch named `phase-<n>-<slug>`, for example
   `phase-2-routing-and-toll-detection`. It merges back with a non fast forward merge so the phase
-  boundary stays visible in the history. The four merge commits in the log are those boundaries.
+  boundary stays visible in the history. Those merge commits are in the private development
+  repository, which carries the full history. The public mirror was created later from a
+  snapshot, so its log starts at the initial import.
 - Small corrections, documentation edits, and UI iteration commit directly to `main`. The history
   shows this pattern after Phase 7, where the work stopped being phase shaped.
 - Branches are deleted after merge. Local backup branches prefixed `backup-` are never pushed.

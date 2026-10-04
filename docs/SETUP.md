@@ -16,7 +16,7 @@ Start with Level 1. It needs no API keys, no map data, and no running stack.
 | Git | any recent | `git --version` | |
 | make | any recent | `make --version` | preinstalled on macOS and Linux |
 | curl and jq | any recent | `jq --version` | only for the manual request checks |
-| k6 | 0.5x | `k6 version` | only for the load smoke, optional |
+| k6 | v2.3.0 | `k6 version` | only for the load smoke, optional |
 
 Maven is not in the list on purpose. The repository ships the Maven wrapper, so `./mvnw` downloads
 the right Maven itself.
@@ -27,8 +27,8 @@ the map preparation step is the reason. On Docker Desktop this is Settings, Reso
 ## Level 1, prove it builds and the tests pass
 
 ```
-git clone git@github.com:akimdev15/truecost.git
-cd truecost
+git clone https://github.com/akimdev15/truecost-project.git
+cd truecost-project
 ./mvnw -B verify
 ```
 

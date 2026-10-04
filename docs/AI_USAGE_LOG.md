@@ -54,7 +54,7 @@ have to prove.
 | --- | --- | --- | --- | --- |
 | Phases 0 to 8 | Jul to Aug 2026 | Implementation to written specifications, test scaffolding, runbook and design record drafting | Every design record, the schema, the Kafka topology, the strategy semantics, the seed data and its provenance | 94 tests against real containers, every runbook command run before commit |
 | Hard Stop 1 and 2 packages | Sep 2026 | Document drafting, diagram generation, cross reference checking | Content, decisions, requirement set, risk judgements | Claims traced back to the repository before submission |
-| Sprint 1 check-in | 4 Oct 2026 | Repository audit against the rubric, drafting the engineering logs in this directory, the `make smoke` target, the `osrm-setup.sh` fixes, and the five baseline commits and the annotated tag | Accepting or rejecting each finding, the risk severities and owners, the reflection and its conclusions, the decision to commit and what to push | Full `mvnw verify` run captured, live stack smoke captured, k6 load run captured, every claim checked against the tree |
+| Sprint 1 check-in | 4 Oct 2026 | Repository audit against the rubric, drafting the engineering logs in this directory, the `make smoke` target, the `osrm-setup.sh` fixes, and the six baseline commits and the annotated tag | Accepting or rejecting each finding, the risk severities and owners, the reflection and its conclusions, the decision to commit and what to push | Full `mvnw verify` run captured, live stack smoke captured, k6 load run captured, every claim checked against the tree |
 
 ### Version control detail for Sprint 1
 
@@ -62,7 +62,7 @@ Recorded at this level of detail once, as the pattern for later sprints.
 
 | Operation | How it was done |
 | --- | --- |
-| Staging | Five groups staged by explicit path. No `git add .`, which matters here because the working tree of the submission repository also holds course documents that must not be committed |
+| Staging | Six groups staged by explicit path. No `git add .`, which matters here because the working tree of the submission repository also holds course documents that must not be committed |
 | Commit messages | Drafted by the assistant to the two sentence convention, reviewed before committing, no `Co-Authored-By` trailer |
 | Tag | `v0.1.0-baseline`, annotated, message carrying the verified test and load numbers and naming what is not built |
 | Push | Mine. The assistant was told not to push the full phase history to the public repository, and that instruction held |

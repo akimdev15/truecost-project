@@ -20,12 +20,14 @@ That turned out to be worth doing for a reason I did not expect, which is the ne
 
 - Wrote down the conventions the history was already following. `docs/ENGINEERING.md` records the
   layout, the naming rules, the branch strategy, and the artifact storage rules. The branch
-  strategy was already real, the four merge commits are phase boundaries, it just was not stated.
+  strategy was already real, the phase merges are in the development repository, it just was
+  not written down.
 - `docs/SETUP.md`, a clean clone path with two levels. Level 1 is `./mvnw -B verify` and takes
   about a minute. Level 2 runs the whole system and is honest that the routing data preparation
   is the expensive part.
 - `docs/RISK_LOG.md`, one register carrying the Hard Stop 1 risks and the Hard Stop 2 design
-  risks forward with severity, owner, mitigation, and status, plus ten issues opened this sprint.
+  risks forward with severity, owner, mitigation, and status, plus eleven issues opened this
+  sprint.
 - `docs/KNOWN_ISSUES.md`, the operational limitations separated from project risk, because they
   are read by different people at different times.
 - `docs/ARCHITECTURE.md`, the package by package map from the repository to the architecture in

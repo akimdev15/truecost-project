@@ -23,3 +23,17 @@ HANDOFF.md
 .claude/worktrees/
 CLAUDE.md
 .claude/
+
+# Course submission drafts and their build scripts, kept local
+docs/submission/
+*.docx
+*.pptx
+build_*.py
+/screenshots/
+teleprompter.html
+video-script.md
+*.svg
+*.png
+!docs/evidence/screenshots/*.png
+CISC594_Project_Proposal.md
+
