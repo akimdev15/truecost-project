@@ -74,9 +74,10 @@ services:
       - ../data/osrm:/data
     # Data is prepared once by scripts/osrm-setup.sh, wired to make osrm, not built by compose.
     # mld is the multi level Dijkstra algorithm the prepare pipeline in osrm-setup.sh produces.
-    # The file name matches the Geofabrik us-northeast extract osrm-setup.sh downloads, see the
-    # runbook's OSRM section for the smaller clipped extract this development sandbox used
-    # instead under real memory constraints, and how to point this command at it locally.
+    # The file name matches that script's default, the us-northeast extract clipped to the NYC
+    # metro bounding box, which is what fits in a laptop Docker memory budget. Preparing the full
+    # extract instead, TRUECOST_OSRM_EXTENT=full, produces us-northeast-latest.osrm, so point
+    # this command at that file if you do. See the runbook's OSRM section.
     command: osrm-routed --algorithm mld /data/nyc-metro.osrm
     # The image ships no curl or wget, so the healthcheck opens a raw TCP connection to the
     # HTTP listen port with a bash /dev/tcp redirect instead, confirming osrm-routed is bound
