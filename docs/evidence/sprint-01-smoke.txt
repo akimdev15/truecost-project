@@ -1,0 +1,86 @@
+TrueCost, live stack smoke test
+Captured 4 October 2026 for the Sprint 1 baseline check-in
+Host: macOS 25.5.0, Corretto 21.0.11, Docker 29.8.0
+Stack: make up, infra in containers, API from target/truecost-0.0.1-SNAPSHOT.jar on the host
+
+===== 1. containers =====
+truecost-grafana  Up About a minute
+truecost-prometheus  Up About a minute
+truecost-osrm  Up About a minute (healthy)
+truecost-tempo  Up About a minute
+truecost-kafka  Up About a minute (healthy)
+truecost-apicurio  Up About a minute
+truecost-postgres  Up About a minute (healthy)
+truecost-redis  Up About a minute (healthy)
+
+===== 2. flyway migration and seed load =====
+Successfully applied 2 migrations to schema "public", now at version v2
+seed loaded, vehicleClasses=8 crossings=17 tollRates=78 congestionSchedules=12 congestionCredits=4 rentalCompanies=6 tollPrograms=11
+
+===== 3. reference rows in Postgres =====
+ toll_crossing = 17
+ toll_rate = 78
+ toll_program = 11
+ rental_company = 6
+ vehicle_class = 8
+
+===== 4. API health =====
+{"status":"UP","db":"UP","redis":"UP"}
+
+===== 5. OSRM serving real routes, Manhattan to Philadelphia =====
+{"code":"Ok","durationSeconds":7549.4,"distanceMetres":154479.9}
+
+===== 6. make demo-check =====
+api    UP
+osrm   UP
+plan   HTTP 200
+
+===== 7. the golden trip request, end to end =====
+POST /api/v1/trips/plan with eval/golden/sample-request.json
+{
+  "optionCount": 6,
+  "freshness": {
+    "route": "FRESH",
+    "tolls": "FRESH",
+    "fuel": "UNAVAILABLE",
+    "hotel": "FRESH"
+  },
+  "recommendation": {
+    "companyCode": "THRIFTY",
+    "carClassCode": "MIDSIZE",
+    "trueTotalCents": 41592,
+    "savingsOverNextCents": 872,
+    "summary": "Thrifty MIDSIZE is the cheapest option at $415.92 all in, saving $8.72 over the next best option. Thrifty PlatePass All-Inclusive wins at 69.98. Next best is Thrifty PlatePass per-crossing at 92.28, a margin of 22.30. The flat unlimited plan fee of 42.98 covers every toll, which comes out cheaper than paying per crossing here."
+  }
+}
+
+===== 8. warm path latency, NFR1 target is p95 at or below 300 ms =====
+  request 1  http 200  total 0.007313 s
+  request 2  http 200  total 0.008859 s
+  request 3  http 200  total 0.006600 s
+  request 4  http 200  total 0.006790 s
+  request 5  http 200  total 0.008127 s
+
+===== 9. toll strategy decisions recorded =====
+{"count":72.0,"strategiesChosen":["COMPANY_UNLIMITED","COMPANY_PER_CROSSING"]}
+
+===== 10. make osrm is idempotent, a no-op run after the fix =====
+reusing existing source extract at data/osrm/us-northeast-latest.osm.pbf, pass --force to redownload
+reusing existing clipped extract at data/osrm/nyc-metro.osm.pbf, pass --force to reclip
+reusing existing extract graph at data/osrm/nyc-metro.osrm.ebg, pass --force to rerun osrm-extract
+reusing existing partition at data/osrm/nyc-metro.osrm.partition, pass --force to rerun osrm-partition
+reusing existing customized data at data/osrm/nyc-metro.osrm.cell_metrics, pass --force to rerun osrm-customize
+
+osrm data preparation complete, serving file is data/osrm/nyc-metro.osrm
+recording the input checksum so an accuracy run can name the map it was measured against:
+6ccb82c5166c98fe194d897abc5d547a70a5ce727b3153ff58ca69898559d637  data/osrm/nyc-metro.osm.pbf
+
+bring up the routing service with, docker compose -f deploy/compose.yaml up -d osrm
+then check it with, curl -s 'localhost:5001/route/v1/driving/-73.99,40.75;-75.16,39.95?overview=false' | jq '.routes[0].duration'
+
+===== notes =====
+Fuel reports UNAVAILABLE because no EIA key is configured. That is the documented default,
+and the freshness block is how a fallback stays visible instead of blending into the total.
+truecost.events.enabled defaults to false, so the API publishes no Kafka events in this run
+and no topics are created. The Kafka path is covered by EventSerdeIntegrationTest and
+PrefetcherFlowIntegrationTest in the verify run, which use a real broker via Testcontainers.

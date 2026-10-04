@@ -1,0 +1,68 @@
+TrueCost, k6 load smoke
+Captured 4 October 2026 for the Sprint 1 baseline check-in
+Command: make k6-smoke, against the API on the host and the compose infra stack
+k6 v2.3.0, macOS 25.5.0, Corretto 21.0.11
+
+Scenarios
+  cold_path   10 iterations, each jittered to a novel geohash cell so it misses the cache
+  warm_path   200 requests per second for 30 seconds at one pre-warmed trip
+
+  █ THRESHOLDS 
+
+    cold_duration
+    ✓ 'p(95)<3000' p(95)=66.13ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+    warm_duration
+    ✓ 'p(95)<300' p(95)=4.41ms
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 6011    63.233738/s
+    checks_succeeded...: 100.00% 6011 out of 6011
+    checks_failed......: 0.00%   0 out of 6011
+
+    ✓ cold path status 200
+    ✓ warm path status 200
+
+    CUSTOM
+    cold_duration..................: avg=40.14ms min=24.81ms med=33.14ms max=75.23ms p(90)=57.04ms p(95)=66.13ms
+    warm_duration..................: avg=2.97ms  min=1.72ms  med=2.75ms  max=38.96ms p(90)=3.95ms  p(95)=4.41ms 
+
+    HTTP
+    http_req_duration..............: avg=3.04ms  min=1.72ms  med=2.76ms  max=75.23ms p(90)=3.96ms  p(95)=4.43ms 
+      { expected_response:true }...: avg=3.04ms  min=1.72ms  med=2.76ms  max=75.23ms p(90)=3.96ms  p(95)=4.43ms 
+    http_req_failed................: 0.00%  0 out of 6012
+    http_reqs......................: 6012   63.244258/s
+
+    EXECUTION
+    iteration_duration.............: avg=3.13ms  min=1.76ms  med=2.85ms  max=75.93ms p(90)=4.1ms   p(95)=4.54ms 
+    iterations.....................: 6011   63.233738/s
+    vus............................: 1      min=0         max=1  
+    vus_max........................: 101    min=101       max=101
+
+    NETWORK
+    data_received..................: 39 MB  414 kB/s
+    data_sent......................: 2.3 MB 24 kB/s
+
+
+
+
+===== how to read this, and what it does not prove =====
+Both NFR thresholds passed with a wide margin, p95 of 4.41 ms warm against a 300 ms target
+and 66.13 ms cold against a 3 s target, with 0 failures across 6012 requests.
+
+The margin is larger than it will be in a real measurement, and the reason matters.
+No external provider was reachable in this run. Rental, fuel, and hotel all resolved to
+their local fallbacks, and OSRM is a local container serving a clipped metro extract. So
+the cold path here measures the fan-out, the cache, and the strategy engine, and it does
+not measure network latency to a live provider, which is the part most likely to move p95.
+Treat this as a floor on performance and a working harness, not as the NFR1 and NFR2
+baseline. The real baseline runs are scheduled for the week ending 18 October, which is
+risk R9 in docs/RISK_LOG.md.
+
+It does close one thing. SC5 is judged at 2.5 s while the application deadline is 3 s,
+logged as I-04. This run cannot distinguish them, which is the point of the issue.

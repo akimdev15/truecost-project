@@ -1,0 +1,43 @@
+TrueCost, full build and test run
+Captured 4 October 2026 for the Sprint 1 baseline check-in
+Command: ./mvnw -B verify
+Host: macOS 25.5.0, Corretto 21.0.11, Docker 29.8.0
+
+===== per class results =====
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.548 s -- in com.truecost.cache.TwoTierCacheStaleTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.485 s -- in com.truecost.cache.TwoTierCacheConcurrencyTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.truecost.route.PolylineDecoderTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.157 s -- in com.truecost.route.RouteClientTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.235 s -- in com.truecost.stream.HotRouteTopologyTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.660 s -- in com.truecost.stream.PrefetcherFlowIntegrationTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.179 s -- in com.truecost.provider.fuel.FuelCostServiceTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.602 s -- in com.truecost.provider.rental.RapidApiRentalProviderTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.truecost.provider.rental.SyntheticRentalProviderTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.576 s -- in com.truecost.provider.hotel.AmadeusHotelProviderTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in com.truecost.provider.support.ResilientHttpClientTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.398 s -- in com.truecost.api.TripPlanSnapshotTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.873 s -- in com.truecost.api.TripPlanSingleflightTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.512 s -- in com.truecost.api.TripPlanUserSuppliedRateTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.565 s -- in com.truecost.events.EventSerdeIntegrationTest
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.475 s -- in com.truecost.toll.GoldenRouteTest
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.truecost.toll.GeoMathTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.truecost.toll.CongestionZoneTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.206 s -- in com.truecost.toll.CongestionPricerTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.199 s -- in com.truecost.toll.CrossingDetectorTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.truecost.toll.strategy.TollStrategyEngineTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.075 s -- in com.truecost.toll.strategy.TollStrategyPropertyTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.239 s -- in com.truecost.persist.ReferenceDataRepositoryTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.416 s -- in com.truecost.TrueCostApplicationIntegrationTest
+
+===== totals =====
+Tests run: 94, Failures: 0, Errors: 0, Skipped: 0
+
+===== packaged artifacts =====
+--- spring-boot:3.5.16:repackage (repackage) @ truecost ---
+Replacing main artifact /Users/aisen/akimdev15/v2_apps/truecost/target/truecost-0.0.1-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+--- spring-boot:3.5.16:repackage (repackage-prefetcher) @ truecost ---
+Attaching repackaged archive /Users/aisen/akimdev15/v2_apps/truecost/target/truecost-0.0.1-SNAPSHOT-prefetcher.jar with classifier prefetcher
+
+===== result =====
+BUILD SUCCESS
+Total time:  53.971 s

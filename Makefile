@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f deploy/compose.yaml
 
-.PHONY: help up down run prefetch images test itest psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval up-all down-all logs
+.PHONY: help up down run prefetch images test itest smoke psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval up-all down-all logs
 
 help:
 	@echo "truecost make targets"
@@ -15,6 +15,7 @@ help:
 	@echo "  images        build the API and prefetcher Docker images from deploy/Dockerfile"
 	@echo "  test          run unit and Testcontainers integration tests"
 	@echo "  itest         run only the integration tests, filtered by naming convention"
+	@echo "  smoke         the baseline check, build plus full test suite plus the live stack probe"
 	@echo "  psql          open psql against the local Postgres"
 	@echo "  redis         open redis-cli against the local Redis"
 	@echo "  kafka-topics  list Kafka topics on the local broker"
@@ -63,6 +64,16 @@ test:
 
 itest:
 	./mvnw test -Dtest='*IntegrationTest'
+
+# The one command that answers "is the baseline real". Builds both deployables, runs every test
+# against real containers, then probes the running stack if there is one. The stack probe is
+# advisory, make up-all first if you want it to mean something.
+smoke:
+	@echo "== build and full test suite =="
+	./mvnw -B verify
+	@echo ""
+	@echo "== live stack probe =="
+	@$(MAKE) --no-print-directory demo-check || echo "stack not running, run make up-all for the live probe"
 
 psql:
 	psql postgresql://truecost:truecost@localhost:5432/truecost
