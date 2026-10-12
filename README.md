@@ -144,7 +144,7 @@ Each row cites the validation check that produced the evidence, from `scripts/va
 | Input validation | Works | A10, an empty request returns 400 with the missing fields named |
 | Out of bounds rejection, FR14 | Not built | A12, I-01 |
 | Kafka publish and schema registry | Works | K1 to K3 |
-| Hot route prefetch | Works | observed live in runs 2, 3, 6, and 7, `prefetch-observation.txt` in those run directories |
+| Hot route prefetch | Works | observed live in four runs with `scripts/observe-prefetch.sh` |
 | Fallback marking | Partial | provenance marks every fallback, freshness reports a synthetic hotel as FRESH, A15 and I-18 |
 | Metrics | Works | M1, M2 |
 | Tracing | Partial | works across the Kafka hop, breaks at the virtual thread fan-out, O2 and I-14 |
