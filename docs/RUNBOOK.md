@@ -526,3 +526,40 @@ k9s gives a live terminal view of the namespace, pods, logs, and resource use in
 ```
 k9s -n truecost
 ```
+
+## Validation, Hard Stop 3
+
+Every command here was run for Hard Stop 3 on 11 October 2026. Evidence lands in
+`docs/evidence/hs3/`, one directory per run. The directory is ignored by git.
+
+Build the two jars the validation runs use:
+
+```
+./mvnw -B verify
+```
+
+Validate from a clean restart. This deletes every compose volume and the prefetcher's Kafka Streams
+state, records that every store is empty, seeds from the CSVs, starts both jars, and runs every
+check. Under a minute. Exit status is the number of failing checks:
+
+```
+make clean-run
+```
+
+Validate a stack that is already running, without tearing it down:
+
+```
+make validate
+```
+
+Watch the hot route prefetch fire live. It takes about five minutes because a signal is only
+emitted once its window closes and a later search moves stream time past it:
+
+```
+KEEP_RUNNING=true scripts/clean-run.sh
+scripts/observe-prefetch.sh docs/evidence/hs3/<the run directory it printed>
+```
+
+If a run fails, read `checks.txt` in its directory first. Each line names the check, and a KNOWN
+result points at the issue in `docs/RISK_LOG.md` it reproduces. The process logs are `api.log` and
+`prefetcher.log` in the same directory, and check L1 fails the run on any ERROR line in them.

@@ -3,7 +3,7 @@
 What you will actually hit running this, and what to do about it. Project level risk tracking
 lives separately in `docs/RISK_LOG.md`. This file is operational.
 
-Current as of 4 October 2026, baseline `v0.1.0-baseline`.
+Current as of 11 October 2026, Hard Stop 3 validation. Baseline `v0.1.0-baseline`.
 
 ## Functional limitations
 
@@ -20,16 +20,39 @@ map clipped to `-75.35,39.85,-71.5,41.8`. A request toward a city outside it sna
 point inside the box and returns a real looking route that stops at the boundary. Check the
 snapped waypoint in the response if a duration looks too small. Tracked as I-09.
 
+**Congestion pricing is seeded only up to the 2025 rate.** The 2028 and 2031 increases are not in
+`congestion.csv`, so a trip dated 2028 or later is priced at 2025 rates. Every evaluation trip is
+in 2026. Tracked as I-15.
+
 **`make eval` is a stub.** The accuracy evaluation runner is Phase 9 and is not built, so the
 headline accuracy numbers have no evidence path yet. The target prints a pointer and exits.
 Tracked as I-02.
 
 **No live provider credentials are configured.** This is deliberate and not a defect. Rental base
 rates are user supplied input by design, and the fuel and hotel connectors fall back to a
-documented static price and a synthetic path respectively. Every fallback is tagged in the
-response `freshness` block, so a fallback is visible rather than silently blended into the total.
+documented static price and a synthetic path respectively. Every fallback is marked in the
+response `provenance` block. The `freshness` block is not consistent about it, see below.
+
+**A synthetic hotel price is reported as FRESH.** `freshness.hotel` tracks how old the cached
+value is, not where it came from, so a synthetic hotel estimate reads FRESH while fuel on its
+fallback reads UNAVAILABLE. Read `provenance.hotelSource` to see that the hotel is synthetic. The
+demo UI does not show it either, its SYNTHETIC badge is the rental source. Tracked as I-18.
 
 ## Environment and build
+
+**Disk space on the development machine is tight.** The host is 98 percent used, and free space
+fell from 12 to 9.3 GB across the Hard Stop 3 runs. A fresh OSRM preparation needs about 4.7 GB for its files plus temporary space while
+`osrm-extract` runs, so it fits, but with little margin. The graph in `data/osrm` is reused, and
+every validation run checks its sha256. Tracked as I-13.
+
+**The prefetcher keeps its Kafka Streams state in the OS temp directory.** `state.dir` is not set,
+so it resolves to `$TMPDIR/kafka-streams`. That directory survives `docker compose down -v`, so
+after a clean restart the prefetcher finds a checkpoint ahead of the freshly emptied changelog,
+logs `TaskCorruptedException` at ERROR, and rebuilds part of the store. The rest of the window
+counts survive, so searches from a previous run still count toward the next run's hot routes.
+The API's own results are unaffected. `scripts/clean-run.sh` deletes
+`$TMPDIR/kafka-streams/truecost-prefetcher` before every run since run 6. If you start the
+prefetcher by hand, delete it yourself first. Tracked as I-16.
 
 **OSRM preparation is memory hungry and fails silently.** `osrm-extract` is killed with no error
 message when Docker runs out of memory, which reads as a mysterious hang followed by nothing. The
@@ -55,6 +78,15 @@ Same tool, unofficial build. It runs once during setup and touches nothing at ru
 
 **The first `./mvnw verify` is slow.** Maven downloads dependencies and Testcontainers pulls
 Postgres, Redis, Kafka, and Apicurio images. Budget ten minutes cold and under a minute warm.
+
+## Observability
+
+**Traces break at the virtual thread fan-out.** A plan request trace shows the HTTP span, the
+`trip-searches` publish, and the `quote-snapshots` hop into the prefetcher, but not the route
+lookup. Each OSRM call appears in Tempo as its own root trace named `osrm-route`, because the fan
+out executor does not carry trace context into the virtual threads. Redis and JDBC calls are not
+traced at all. To find a route lookup, search Tempo for `{name="osrm-route"}` rather than opening
+the plan request trace. Tracked as I-14.
 
 ## Testing
 

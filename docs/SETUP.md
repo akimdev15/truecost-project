@@ -15,7 +15,8 @@ Start with Level 1. It needs no API keys, no map data, and no running stack.
 | Docker | 29.8.0 | `docker info` | The daemon must be running, Testcontainers starts real containers |
 | Git | any recent | `git --version` | |
 | make | any recent | `make --version` | preinstalled on macOS and Linux |
-| curl and jq | any recent | `jq --version` | only for the manual request checks |
+| curl and jq | any recent | `jq --version` | required for Level 3, otherwise only for manual request checks |
+| nc and shasum | preinstalled on macOS | `which nc shasum` | required for Level 3 |
 | k6 | v2.3.0 | `k6 version` | only for the load smoke, optional |
 
 Maven is not in the list on purpose. The repository ships the Maven wrapper, so `./mvnw` downloads
@@ -23,6 +24,11 @@ the right Maven itself.
 
 Docker memory matters. Level 1 needs about 4 GB available to Docker. Level 2 needs about 8 GB, and
 the map preparation step is the reason. On Docker Desktop this is Settings, Resources, Memory.
+
+Disk matters too, and it was missing from this list until Hard Stop 3. The routing data takes
+about 4.7 GB once prepared, 1.7 GB for the source extract, 0.6 GB for the clipped extract, and
+2.4 GB for the prepared graph, and `osrm-extract` needs temporary space on top of that while it
+runs. Leave at least 8 GB free before running `make osrm`.
 
 ## Level 1, prove it builds and the tests pass
 
@@ -46,8 +52,6 @@ Expected ending:
 
 The first run is slower because Maven downloads dependencies and Docker pulls the Testcontainers
 images. A warm run finishes in under a minute.
-
-A captured run is committed at `docs/evidence/sprint-01-verify.txt` if you want to compare.
 
 ## Level 2, run the whole system
 
@@ -107,8 +111,7 @@ make run        # in one terminal, the API on 8080
 make prefetch   # in another, the prefetcher on 8082
 ```
 
-That is the same code against the same containers, and it is the path the committed evidence in
-`docs/evidence/sprint-01-smoke.txt` was captured from.
+That is the same code against the same containers, and it is the path `make smoke` checks.
 
 ### Step 3, confirm it is alive
 
@@ -130,6 +133,38 @@ Then open `http://localhost:8080/` for the demo UI, or send the golden request y
 curl -s localhost:8080/api/v1/trips/plan \
   -H 'Content-Type: application/json' \
   -d @eval/golden/sample-request.json | jq
+```
+
+## Level 3, validate a clean restart
+
+Level 3 needs Level 2's prepared map in `data/osrm` and the jq, nc, and shasum tools above. It
+has only been run on macOS. The environment snapshot uses `sw_vers` and `sysctl`, and
+`observe-prefetch.sh` uses BSD `date -r`, so on Linux those parts will need changing.
+
+```
+./mvnw -B verify       # builds the two jars the run uses
+make clean-run         # wipes every store, rebuilds from the CSVs, starts both jars, validates
+```
+
+`scripts/clean-run.sh` tears the compose stack down with its volumes, records that Postgres,
+Redis, Kafka, and Apicurio really are empty, seeds from the CSVs, starts the prefetcher and the
+API from the built jars, and runs `scripts/validate.sh`. Each run writes its own directory under
+`docs/evidence/hs3/`, which is ignored by git, with an environment snapshot naming the jar, image, map, and seed checksums,
+every check result, and the logs. It takes under a minute. Exit status is the number of failing
+checks, and a check that reproduces a documented issue is reported as KNOWN rather than as a pass.
+
+The teardown does not touch the prepared OSRM graph, which is a bind mount and survives on
+purpose. The run checksums both the clipped extract and the prepared graph instead. The
+prefetcher's Kafka Streams state lives in the OS temp directory, outside every volume, so the
+script deletes it explicitly. Before it did, hot route counts carried from one run into the
+next, I-16.
+
+To watch the hot route prefetch happen live, which takes about five minutes because a signal is
+only emitted once its window closes:
+
+```
+KEEP_RUNNING=true scripts/clean-run.sh
+scripts/observe-prefetch.sh docs/evidence/hs3/<the run directory it printed>
 ```
 
 ## Ports
@@ -158,8 +193,9 @@ There are none to configure. This is a deliberate scope decision rather than an 
 - Fuel falls back to a documented static price when no EIA key is set.
 - Hotel falls back to its synthetic path when no Amadeus key is set.
 
-Every one of these paths tags its output with a freshness marker that the API response carries, so
-a fallback is visible in the response rather than silently blended in.
+Every one of these paths is marked in the response `provenance` block, so a fallback is visible
+rather than blended in. The `freshness` block is less reliable for this. Fuel reports UNAVAILABLE
+there, but a synthetic hotel still reports FRESH, I-18.
 
 ## Shutting down
 

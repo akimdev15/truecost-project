@@ -7,7 +7,42 @@ Dates are the dates the work was committed, not the dates it was planned.
 
 ## [Unreleased]
 
-### Added
+### Added, Hard Stop 3 validation
+- `scripts/validate.sh`, 42 graded checks against a running stack across the toolchain, the
+  reference data, routing, API correctness, the user supplied rate path, Kafka and the schema
+  registry, observability, and the process logs. A
+  check that reproduces a documented issue reports KNOWN rather than passing or failing.
+- `scripts/clean-run.sh`, which tears the stack down with its volumes, waits for both jars to exit,
+  deletes the prefetcher's Kafka Streams state, records that every store is empty, seeds from the CSVs, starts both jars, and
+  validates. Under a minute.
+- `scripts/observe-prefetch.sh`, which watches a hot route signal get emitted and consumed live.
+- `make validate` and `make clean-run`.
+- Issues I-13 to I-18 in `docs/RISK_LOG.md`, found by the validation runs and an independent review.
+
+### Fixed
+- Documents claimed every provider fallback was flagged in the freshness block. A synthetic
+  hotel is reported FRESH, so the documents now point at the provenance block, I-18.
+- The routing data was quoted as 9.8 GB. A full `make osrm` writes 4.7 GB.
+
+### Removed
+- `docs/AI_USAGE_LOG.md`, `docs/sprint/`, and `docs/evidence/`, added in 0.1.0-baseline, are no
+  longer tracked. Course assignment material and captured run output stay local, and the
+  validation scripts regenerate the evidence on any machine.
+
+### Changed
+- `docs/RUNBOOK.md` has a validation section for `make clean-run`, `make validate`, and the live
+  prefetch observation.
+- README status now has a works and partial table, each row citing the check that proves it.
+- `docs/SETUP.md` lists disk space as a prerequisite and documents the clean restart workflow.
+
+## [0.1.0-baseline] 2026-10-04
+
+The engineering baseline. Phases 0 through 8 and the CI pipeline are built, the full stack runs in
+containers, and 94 tests pass. Tagged as the reference point later sprints are compared against.
+
+### Sprint 1, the engineering baseline. 2026-10-04
+
+#### Added
 - `docs/ENGINEERING.md`, the repository layout, naming conventions, branch strategy, and artifact
   storage rules that the history already followed but that were never written down.
 - `docs/ARCHITECTURE.md`, the package by package map from the repository to the architecture.
@@ -23,7 +58,7 @@ Dates are the dates the work was committed, not the dates it was planned.
 - `docs/evidence/`, captured verification, live stack smoke, and k6 load output.
 - `make smoke`, one target that runs the build, the full test suite, and the live stack check.
 
-### Fixed
+#### Fixed
 - `scripts/osrm-setup.sh` now produces the map file `deploy/compose.yaml` actually serves. It
   previously prepared `us-northeast-latest.osrm` while compose started `osrm-routed` against
   `/data/nyc-metro.osrm`, so a clean clone following the README got a routing container that could
@@ -35,11 +70,6 @@ Dates are the dates the work was committed, not the dates it was planned.
 - `scripts/osrm-setup.sh` records a sha256 of the prepared map, so an accuracy measurement can
   name the map it was taken against.
 - The README status section claimed Kubernetes was unbuilt after Phase 8 had shipped.
-
-## [0.1.0-baseline] 2026-10-04
-
-The engineering baseline. Phases 0 through 8 and the CI pipeline are built, the full stack runs in
-containers, and 94 tests pass. Tagged as the reference point later sprints are compared against.
 
 ### Phase 8, Kubernetes, and CI. 2026-07-20
 - Kubernetes manifests under `deploy/k8s/base`, nine Deployments, nine Services, two Jobs, two

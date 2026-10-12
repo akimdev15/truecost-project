@@ -98,6 +98,7 @@ Grafana is on `localhost:3000`, Prometheus on `9090`. See `docs/RUNBOOK.md` for 
 ```
 make test      # unit and Testcontainers integration tests
 make smoke     # the baseline check, build plus full suite plus the live stack probe
+make clean-run # wipe every store, rebuild from the CSVs, start both jars, run every validation check
 ```
 
 The suite is self contained, it spins up its own Postgres, Redis, Kafka, and Apicurio through
@@ -111,22 +112,44 @@ independently of the engine except for the `NO_ARRANGEMENT` gate, which it copie
 case agreement shows the engine matches its specification rather than that the specification is
 right. Tracked in `docs/KNOWN_ISSUES.md`.
 
-Captured output from real runs is in `docs/evidence/`, a full build and test run, a live stack
-smoke, and a k6 load run against both latency thresholds.
+Captured run output is not shipped in the repository. `make smoke` prints the build, test, and
+live stack result, and `make clean-run` writes a full validation run under `docs/evidence/hs3/`,
+which is ignored by git, so the evidence is reproduced on your machine.
 
 ## Status
 
-Baseline `v0.1.0-baseline`, tagged 4 October 2026.
+Baseline `v0.1.0-baseline`, tagged 4 October 2026. Validated at Hard Stop 3, 11 October 2026.
 
 Phases 0 through 8 are built, the domain and reference data, routing and toll detection, the toll
 strategy engine, the data providers, the aggregation API and cache, the Kafka Streams prefetcher,
 observability, and the Kubernetes packaging. CI runs the full suite, a kustomize render, and both
 image builds on every push.
 
-Not built yet. The accuracy evaluation runner, Phase 9, so `make eval` is a stub and the headline
-accuracy numbers have no evidence path. FR14 out of bounds rejection, so a route leaving the
-seeded toll coverage still returns a biased ranking rather than an error. Both are the top items
-in `docs/RISK_LOG.md`.
+### What works and what is partial
+
+Each row cites the validation check that produced the evidence, from `scripts/validate.sh`.
+`make clean-run` reproduces every row from a clean restart.
+
+| Area | State | Evidence |
+| --- | --- | --- |
+| Build and test suite | Works | 94 tests, three consecutive runs, no failures |
+| Clean restart from the CSVs | Works | `scripts/clean-run.sh`, nine runs, fully clean from run 6, I-16 |
+| Reference data load | Works | D1 to D9, every table matches its CSV row count |
+| Routing inside the metro box | Works | R1 |
+| Routing outside it | Partial | R2, snaps to the map edge and still returns Ok, I-09 |
+| Cost arithmetic and ranking | Works | A2 to A7 hold on every option in every run |
+| User supplied base rates | Works | A13 and A14, exercised live from run 6 |
+| Toll strategy gating on tag ownership | Works | A8 |
+| Determinism | Works | A9, and the golden response hashes identically across runs |
+| Input validation | Works | A10, an empty request returns 400 with the missing fields named |
+| Out of bounds rejection, FR14 | Not built | A12, I-01 |
+| Kafka publish and schema registry | Works | K1 to K3 |
+| Hot route prefetch | Works | observed live in runs 2, 3, 6, and 7, `prefetch-observation.txt` in those run directories |
+| Fallback marking | Partial | provenance marks every fallback, freshness reports a synthetic hotel as FRESH, A15 and I-18 |
+| Metrics | Works | M1, M2 |
+| Tracing | Partial | works across the Kafka hop, breaks at the virtual thread fan-out, O2 and I-14 |
+| Accuracy against real costs | Not measured | no ground truth yet, the golden set is 0 of 20, I-02 |
+| Latency baseline | Not measured | the harness works, the real run waits on I-14, R9 |
 
 The full phase plan is in `PLAN.md`, what actually shipped is in `CHANGELOG.md`, and where they
 disagree the changelog is right.
@@ -144,6 +167,4 @@ disagree the changelog is right.
 | `docs/RISK_LOG.md` | the risk and issue register with severity, owner, and status |
 | `docs/KNOWN_ISSUES.md` | what is currently broken or limited, with workarounds |
 | `CHANGELOG.md` | what shipped and when |
-| `docs/AI_USAGE_LOG.md` | provenance of assistant supported work |
 | `docs/design/` | one design record per phase, written before the phase was built |
-| `docs/sprint/` | sprint check-in reflections |

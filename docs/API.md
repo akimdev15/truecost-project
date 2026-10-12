@@ -127,7 +127,9 @@ failure attributed to the wrong cause.
 
 `candidates` carries every strategy the engine evaluated, not only the winner, so a reader can
 check the decision rather than trust it. `partial` is true when any input came from a fallback.
-`provenance` and `freshness` are how a fallback stays visible instead of blending into the total.
+`provenance` is how a fallback stays visible instead of blending into the total. `freshness`
+tracks how old a cached value is, so it is not a reliable fallback marker. A synthetic hotel
+reads FRESH there, I-18.
 
 ## Strategies
 
@@ -180,4 +182,4 @@ osrm   UP
 plan   HTTP 200
 ```
 
-Full captured output is in `docs/evidence/sprint-01-smoke.txt`.
+`make smoke` prints the same check together with the build and test result.
