@@ -34,6 +34,11 @@ teleprompter.html
 video-script.md
 *.svg
 *.png
-!docs/evidence/screenshots/*.png
 CISC594_Project_Proposal.md
 
+# Course assignment material, kept local
+docs/evidence/
+docs/sprint/
+docs/AI_USAGE_LOG.md
+docs/VALIDATION_MEMO.md
+*.zip
