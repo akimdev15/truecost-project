@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f deploy/compose.yaml
 
-.PHONY: help up down run prefetch images test itest smoke psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval up-all down-all logs
+.PHONY: help up down run prefetch images test itest smoke validate clean-run psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval up-all down-all logs
 
 help:
 	@echo "truecost make targets"
@@ -16,6 +16,8 @@ help:
 	@echo "  test          run unit and Testcontainers integration tests"
 	@echo "  itest         run only the integration tests, filtered by naming convention"
 	@echo "  smoke         the baseline check, build plus full test suite plus the live stack probe"
+	@echo "  validate      run every validation check against the running stack, evidence to docs/evidence/hs3"
+	@echo "  clean-run     tear down with volumes, rebuild state from the CSVs, start both jars, validate"
 	@echo "  psql          open psql against the local Postgres"
 	@echo "  redis         open redis-cli against the local Redis"
 	@echo "  kafka-topics  list Kafka topics on the local broker"
@@ -64,6 +66,12 @@ test:
 
 itest:
 	./mvnw test -Dtest='*IntegrationTest'
+
+validate:
+	./scripts/validate.sh
+
+clean-run:
+	./scripts/clean-run.sh
 
 # The one command that answers "is the baseline real". Builds both deployables, runs every test
 # against real containers, then probes the running stack if there is one. The stack probe is
