@@ -104,4 +104,10 @@ public class TripController {
     public ResponseEntity<Map<String, Object>> handleValidation(TripPlanValidationException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
     }
+
+    @ExceptionHandler(OutOfCoverageException.class)
+    public ResponseEntity<Map<String, Object>> handleOutOfCoverage(OutOfCoverageException e) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(Map.of("error", e.getMessage(), "code", OutOfCoverageException.CODE));
+    }
 }

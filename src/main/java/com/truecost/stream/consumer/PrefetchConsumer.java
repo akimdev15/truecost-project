@@ -1,6 +1,7 @@
 package com.truecost.stream.consumer;
 
 import com.truecost.aggregate.TripPlanner;
+import com.truecost.api.OutOfCoverageException;
 import com.truecost.api.dto.TripPlanRequest;
 import com.truecost.events.HotRouteSignal;
 import java.util.List;
@@ -42,7 +43,13 @@ public class PrefetchConsumer {
                 signal.getDepartureAt(), signal.getReturnAt(),
                 false, signal.getCarClass(), List.of());
 
-        tripPlanner.plan(request, false);
+        try {
+            tripPlanner.plan(request, false);
+        } catch (OutOfCoverageException e) {
+            log.warn("hot route is outside toll coverage, skipping prefetch, routeKey={} reason={}",
+                    signal.getRouteKey(), e.getMessage());
+            return;
+        }
         log.info("prefetched hot route, routeKey={} searchCount={} windowEnd={}",
                 signal.getRouteKey(), signal.getSearchCount(), signal.getWindowEnd());
     }

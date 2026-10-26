@@ -73,6 +73,19 @@ still lists as outstanding manual work. Replace this file's figures once that co
 the shape of the CSV, one row per company and car class, is meant to still fit the real numbers
 without a schema change.
 
+## Coverage regions, coverage_regions.csv
+
+These are hand drawn bounding rectangles, not an imported dataset. Their union is the area inside which every tolled facility a route could use is meant to be either seeded in crossings.csv or nonexistent. Coordinates were read from the public locations of the places each box must contain, then padded by a few kilometres, so each box is an engineering judgement and not a measured boundary. A route is accepted only when its origin, destination, and every decoded path point fall in some box.
+
+- NYC_METRO, 40.45 to 41.00 north and -74.30 to -73.40 east. Staten Island to the south, Westchester to the north, and Nassau County to the east. Contains every MTA Bridges and Tunnels and Port Authority crossing in crossings.csv.
+- LONG_ISLAND_EAST, 40.50 to 41.20 north and -73.45 to -71.75 east. Suffolk County to Montauk Point at 41.0362 north, -71.9509 east and Orient Point. Long Island has no toll facility on the routes the evaluation sweep uses, so nothing is seeded there.
+- NEW_JERSEY, 39.75 to 41.36 north and -75.20 to -73.85 east. The New Jersey Turnpike and Garden State Parkway mainlines, which crossings.csv models as single segments, and Princeton at 40.3573 north, -74.6672 east. The southern edge at 39.75 stops short of Cape May and most of the Atlantic City Expressway.
+- HUDSON_VALLEY, 40.95 to 42.05 north and -74.55 to -73.55 east. The Thruway corridor from the Cuomo Bridge to Kingston, containing New Paltz at 41.7476 north, -74.0868 east. The Newburgh Beacon, Mid Hudson, and Bear Mountain bridges fall inside this box and are not seeded.
+- CT_SOUTHWEST, 40.95 to 41.20 north and -73.75 to -73.35 east. Greenwich through Norwalk, containing Stamford at 41.0534 north, -73.5387 east. Connecticut has no tolled roads, so nothing is seeded there.
+- PHILADELPHIA_METRO, 39.75 to 40.35 north and -76.00 to -74.80 east. Philadelphia at 39.9500 north, -75.1600 east and its western suburbs. The Pennsylvania Turnpike and the Delaware River bridges are tolled and not seeded, see I-21 in docs/RISK_LOG.md.
+
+Boston at 42.3601 north, -71.0589 east and Washington DC at 38.9072 north, -77.0369 east fall outside every box. The evaluation sweep routes R1 to R6 in scripts/strategy-sweep.sh are the accepted set the boxes were fitted to, and the routed paths could not be checked against the live OSRM graph when the boxes were drawn.
+
 ## Sources not reachable in the research window
 
 - data.ny.gov's NY Thruway toll dataset, the task's suggested source for Thruway data, was not reachable through the available search and fetch tools. The thruway.ny.gov per-mile rate figures and the Governor Mario M Cuomo Bridge figures, both independently confirmed by multiple search summaries, were used instead.

@@ -142,7 +142,7 @@ Each row cites the validation check that produced the evidence, from `scripts/va
 | Toll strategy gating on tag ownership | Works | A8 |
 | Determinism | Works | A9, and the golden response hashes identically across runs |
 | Input validation | Works | A10, an empty request returns 400 with the missing fields named |
-| Out of bounds rejection, FR14 | Not built | A12, I-01 |
+| Out of bounds rejection, FR14 | Works | A12, 422 OUT_OF_COVERAGE, residual gap I-21 |
 | Kafka publish and schema registry | Works | K1 to K3 |
 | Hot route prefetch | Works | observed live in four runs with `scripts/observe-prefetch.sh` |
 | Fallback marking | Partial | provenance marks every fallback, freshness reports a synthetic hotel as FRESH, A15 and I-18 |

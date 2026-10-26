@@ -15,6 +15,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
         "com.truecost.stream",
         "com.truecost.aggregate",
         "com.truecost.cache",
+        "com.truecost.coverage",
         "com.truecost.persist",
         "com.truecost.provider",
         "com.truecost.route",

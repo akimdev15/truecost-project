@@ -8,5 +8,6 @@ public record SeedSummary(
         int congestionSchedules,
         int congestionCredits,
         int rentalCompanies,
-        int tollPrograms) {
+        int tollPrograms,
+        int coverageRegions) {
 }

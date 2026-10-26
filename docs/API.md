@@ -131,6 +131,21 @@ check the decision rather than trust it. `partial` is true when any input came f
 tracks how old a cached value is, so it is not a reliable fallback marker. A synthetic hotel
 reads FRESH there, I-18.
 
+### Errors
+
+A malformed request returns 400 with `{"error": "..."}` naming each invalid field.
+
+A trip that leaves seeded toll coverage returns 422 and no total. The origin and destination must
+each fall inside a rectangle from `data/seeds/coverage_regions.csv`, and so must every point of the
+routed path on both legs.
+
+```json
+{
+  "error": "The destination is at (42.3601, -71.0589), which is outside the area where tolls can be priced, so no total is returned.",
+  "code": "OUT_OF_COVERAGE"
+}
+```
+
 ## Strategies
 
 The engine prices four and picks the cheapest that applies.

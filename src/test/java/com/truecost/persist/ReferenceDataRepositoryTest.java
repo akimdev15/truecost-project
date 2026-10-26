@@ -45,6 +45,9 @@ class ReferenceDataRepositoryTest {
     private TollProgramRepository programRepository;
 
     @Autowired
+    private CoverageRegionRepository coverageRegionRepository;
+
+    @Autowired
     private RentalCompanyRepository companyRepository;
 
     @Autowired
@@ -64,6 +67,17 @@ class ReferenceDataRepositoryTest {
         assertThat(programRepository.count()).isGreaterThanOrEqualTo(6);
         assertThat(companyRepository.count()).isGreaterThanOrEqualTo(5);
         assertThat(programRepository.countDistinctCompanies()).isGreaterThanOrEqualTo(5);
+    }
+
+    @Test
+    void seedsCoverageRegionsThatContainPhiladelphiaAndExcludeBoston() {
+        var regions = coverageRegionRepository.findAll();
+
+        assertThat(regions).hasSizeGreaterThanOrEqualTo(5);
+        assertThat(regions).anyMatch(r -> r.minLat() <= 39.95 && r.maxLat() >= 39.95
+                && r.minLng() <= -75.16 && r.maxLng() >= -75.16);
+        assertThat(regions).noneMatch(r -> r.minLat() <= 42.3601 && r.maxLat() >= 42.3601
+                && r.minLng() <= -71.0589 && r.maxLng() >= -71.0589);
     }
 
     @Test

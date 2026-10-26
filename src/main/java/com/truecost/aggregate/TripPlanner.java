@@ -2,6 +2,7 @@ package com.truecost.aggregate;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.micrometer.core.instrument.MeterRegistry;
+import com.truecost.api.OutOfCoverageException;
 import com.truecost.api.dto.ChosenStrategy;
 import com.truecost.api.dto.OptionProvenance;
 import com.truecost.api.dto.Recommendation;
@@ -19,6 +20,7 @@ import com.truecost.cache.GeoPoint;
 import com.truecost.cache.Geohash;
 import com.truecost.cache.TollsCacheValue;
 import com.truecost.cache.TwoTierCache;
+import com.truecost.coverage.CoverageRegions;
 import com.truecost.domain.Money;
 import com.truecost.events.EventPublisher;
 import com.truecost.persist.TollProgramRepository;
@@ -35,6 +37,7 @@ import com.truecost.provider.rental.RentalQuoteProvider;
 import com.truecost.provider.rental.RentalQuoteRequest;
 import com.truecost.route.Route;
 import com.truecost.route.RouteClient;
+import com.truecost.route.RoutePoint;
 import com.truecost.toll.PricedCrossing;
 import com.truecost.toll.strategy.CongestionDay;
 import com.truecost.toll.strategy.StrategyCost;
@@ -53,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -107,12 +111,13 @@ public class TripPlanner {
     private final ExecutorService virtualThreadExecutor;
     private final EventPublisher eventPublisher;
     private final MeterRegistry meterRegistry;
+    private final CoverageRegions coverageRegions;
 
     public TripPlanner(TwoTierCache cache, RouteClient routeClient, LegPricer legPricer,
             FuelCostService fuelCostService, VehicleClassRepository vehicleClassRepository,
             TollProgramRepository tollProgramRepository, List<RentalQuoteProvider> rentalProviders,
             List<HotelProvider> hotelProviders, ExecutorService virtualThreadExecutor,
-            EventPublisher eventPublisher, MeterRegistry meterRegistry) {
+            EventPublisher eventPublisher, MeterRegistry meterRegistry, CoverageRegions coverageRegions) {
         this.cache = cache;
         this.routeClient = routeClient;
         this.legPricer = legPricer;
@@ -124,6 +129,7 @@ public class TripPlanner {
         this.virtualThreadExecutor = virtualThreadExecutor;
         this.eventPublisher = eventPublisher;
         this.meterRegistry = meterRegistry;
+        this.coverageRegions = coverageRegions;
     }
 
     /**
@@ -138,6 +144,8 @@ public class TripPlanner {
 
     public TripPlanResponse plan(TripPlanRequest request, boolean userInitiated) {
         Instant deadline = Instant.now().plus(OVERALL_DEADLINE);
+
+        requireEndpointsCovered(request);
 
         LocalDate departDate = request.departureAt().atZone(NEW_YORK).toLocalDate();
         LocalDate returnDate = request.returnAt().atZone(NEW_YORK).toLocalDate();
@@ -225,6 +233,8 @@ public class TripPlanner {
 
         Loaded<Route> outboundRoute = join(outboundRouteF, deadline);
         Loaded<Route> returnRoute = join(returnRouteF, deadline);
+        requireRouteCovered(request, "outbound", outboundRoute);
+        requireRouteCovered(request, "return", returnRoute);
         Map<String, CombinedTolls> tollsByClass = new LinkedHashMap<>();
         for (String tollClass : distinctTollClasses) {
             Loaded<TollsCacheValue> out = join(outboundTollsF.get(tollClass), deadline);
@@ -278,6 +288,40 @@ public class TripPlanner {
 
         Recommendation recommendation = options.isEmpty() ? null : buildRecommendation(options);
         return new TripPlanResponse(options, recommendation, context, freshness);
+    }
+
+    private void requireEndpointsCovered(TripPlanRequest request) {
+        if (!coverageRegions.contains(request.originLat(), request.originLng())) {
+            rejectOutOfCoverage(request, "origin", "The origin is at", request.originLat(), request.originLng());
+        }
+        if (!coverageRegions.contains(request.destLat(), request.destLng())) {
+            rejectOutOfCoverage(request, "destination", "The destination is at", request.destLat(), request.destLng());
+        }
+    }
+
+    /**
+     * A routed path can leave coverage even when both endpoints are inside it, for example a route
+     * that detours through an uncovered state, so every decoded point is checked, not just the ends.
+     */
+    private void requireRouteCovered(TripPlanRequest request, String leg, Loaded<Route> route) {
+        if (!route.present()) {
+            return;
+        }
+        for (RoutePoint point : route.value().points()) {
+            if (!coverageRegions.contains(point.lat(), point.lng())) {
+                rejectOutOfCoverage(request, "route-" + leg, "The " + leg + " route passes through",
+                        point.lat(), point.lng());
+            }
+        }
+    }
+
+    private void rejectOutOfCoverage(TripPlanRequest request, String check, String subject, double lat, double lng) {
+        log.info("trip rejected as out of coverage, check={} originLat={} originLng={} destLat={} destLng={} "
+                        + "offendingLat={} offendingLng={}",
+                check, request.originLat(), request.originLng(), request.destLat(), request.destLng(), lat, lng);
+        throw new OutOfCoverageException(String.format(Locale.ROOT,
+                "%s (%.4f, %.4f), which is outside the area where tolls can be priced, so no total is returned.",
+                subject, lat, lng));
     }
 
     private List<String> resolveCarClasses(String requestedCarClass) {
