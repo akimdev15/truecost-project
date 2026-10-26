@@ -48,7 +48,7 @@ class HotRouteTopologyTest {
         Serde<SearchRequested> searchSerde = new SpecificAvroTestSerde<>(SearchRequested.getClassSchema());
         Serde<HotRouteSignal> signalSerde = new SpecificAvroTestSerde<>(HotRouteSignal.getClassSchema());
 
-        StreamProperties props = new StreamProperties("test", 15, 5, 1, THRESHOLD, 0.8);
+        StreamProperties props = new StreamProperties("test", "build/unused", 15, 5, 1, THRESHOLD, 0.8);
         StreamsBuilder builder = new StreamsBuilder();
         HotRouteTopology.build(builder, props, SOURCE, SINK, searchSerde, signalSerde);
 

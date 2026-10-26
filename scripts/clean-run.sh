@@ -56,10 +56,11 @@ stop_jars() {
     pkill -9 -f "$API_JAR|$PREFETCH_JAR" 2>/dev/null
 }
 stop_jars
-STREAMS_STATE="${TMPDIR:-/tmp}/kafka-streams/truecost-prefetcher"
+STREAMS_STATE="${TRUECOST_STREAM_STATE_DIR:-./var/kafka-streams}/truecost-prefetcher"
+LEGACY_STREAMS_STATE="${TMPDIR:-/tmp}/kafka-streams/truecost-prefetcher"
 
 echo "== teardown with volumes =="
-rm -rf "$STREAMS_STATE"
+rm -rf "$STREAMS_STATE" "$LEGACY_STREAMS_STATE"
 $COMPOSE --profile app down -v --remove-orphans > "$OUT/teardown.log" 2>&1
 phase "teardown"
 

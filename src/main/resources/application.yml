@@ -85,6 +85,7 @@ truecost:
         retention-ms: 604800000
   stream:
     application-id: truecost-prefetcher
+    state-dir: ${TRUECOST_STREAM_STATE_DIR:./var/kafka-streams}
     window-size-minutes: 15
     hop-minutes: 5
     grace-minutes: 1

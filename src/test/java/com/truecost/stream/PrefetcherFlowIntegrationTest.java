@@ -6,6 +6,10 @@ import com.truecost.events.SearchRequested;
 import com.truecost.seed.SeedLoader;
 import io.apicurio.registry.resolver.config.SchemaResolverConfig;
 import io.apicurio.registry.serde.avro.AvroKafkaSerializer;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -16,6 +20,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -29,6 +34,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.util.FileSystemUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -75,15 +81,27 @@ class PrefetcherFlowIntegrationTest {
         apicurio.start();
     }
 
+    // Unique per run so the test can never share local state with a prefetcher process on the same host.
+    static final Path streamsStateDir = createStreamsStateDir();
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.kafka.bootstrap-servers", () -> System.getProperty("spring.embedded.kafka.brokers"));
         registry.add("spring.kafka.properties.apicurio.registry.url", PrefetcherFlowIntegrationTest::registryUrl);
+        registry.add("truecost.stream.state-dir", () -> streamsStateDir.toString());
         registry.add("truecost.events.enabled", () -> "true");
         registry.add("truecost.stream.window-size-minutes", () -> "1");
         registry.add("truecost.stream.hop-minutes", () -> "1");
         registry.add("truecost.stream.grace-minutes", () -> "0");
         registry.add("truecost.stream.hotness-threshold", () -> "5");
+    }
+
+    private static Path createStreamsStateDir() {
+        try {
+            return Files.createTempDirectory("truecost-streams-test");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static String registryUrl() {
@@ -105,6 +123,11 @@ class PrefetcherFlowIntegrationTest {
     @BeforeAll
     void seed() {
         seedLoader.loadAll();
+    }
+
+    @AfterAll
+    void removeStreamsState() {
+        FileSystemUtils.deleteRecursively(streamsStateDir.toFile());
     }
 
     @Test

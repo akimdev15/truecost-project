@@ -15,6 +15,7 @@ bin/
 .gradle/
 build/
 data/osrm/
+var/
 deploy/k8s/.kind-cache/
 eval/results/*.json
 eval/results/*.html
