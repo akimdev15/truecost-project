@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.micrometer.core.instrument.MeterRegistry;
 import com.truecost.api.dto.ChosenStrategy;
 import com.truecost.api.dto.OptionProvenance;
+import com.truecost.api.dto.RateSnapshot;
 import com.truecost.api.dto.Recommendation;
 import com.truecost.api.dto.RentalRateOverride;
 import com.truecost.api.dto.SharedFreshness;
@@ -30,6 +31,7 @@ import com.truecost.provider.fuel.FuelPriceResolution;
 import com.truecost.provider.hotel.HotelOffer;
 import com.truecost.provider.hotel.HotelProvider;
 import com.truecost.provider.hotel.HotelRequest;
+import com.truecost.provider.hotel.SyntheticHotelProvider;
 import com.truecost.provider.rental.RentalQuote;
 import com.truecost.provider.rental.RentalQuoteProvider;
 import com.truecost.provider.rental.RentalQuoteRequest;
@@ -55,12 +57,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -107,12 +111,14 @@ public class TripPlanner {
     private final ExecutorService virtualThreadExecutor;
     private final EventPublisher eventPublisher;
     private final MeterRegistry meterRegistry;
+    private final RateSnapshotResolver rateSnapshotResolver;
 
     public TripPlanner(TwoTierCache cache, RouteClient routeClient, LegPricer legPricer,
             FuelCostService fuelCostService, VehicleClassRepository vehicleClassRepository,
             TollProgramRepository tollProgramRepository, List<RentalQuoteProvider> rentalProviders,
             List<HotelProvider> hotelProviders, ExecutorService virtualThreadExecutor,
-            EventPublisher eventPublisher, MeterRegistry meterRegistry) {
+            EventPublisher eventPublisher, MeterRegistry meterRegistry,
+            RateSnapshotResolver rateSnapshotResolver) {
         this.cache = cache;
         this.routeClient = routeClient;
         this.legPricer = legPricer;
@@ -124,6 +130,7 @@ public class TripPlanner {
         this.virtualThreadExecutor = virtualThreadExecutor;
         this.eventPublisher = eventPublisher;
         this.meterRegistry = meterRegistry;
+        this.rateSnapshotResolver = rateSnapshotResolver;
     }
 
     /**
@@ -277,7 +284,13 @@ public class TripPlanner {
                 hotel.freshness());
 
         Recommendation recommendation = options.isEmpty() ? null : buildRecommendation(options);
-        return new TripPlanResponse(options, recommendation, context, freshness);
+        Set<String> pricedCrossingCodes = tollsByClass.values().stream()
+                .flatMap(tolls -> tolls.crossings().stream())
+                .map(PricedCrossing::crossingCode)
+                .collect(Collectors.toSet());
+        RateSnapshot rateSnapshot = rateSnapshotResolver.resolve(pricedCrossingCodes, departDate,
+                programsByCompany.values().stream().flatMap(List::stream).toList());
+        return new TripPlanResponse(options, recommendation, context, freshness, rateSnapshot);
     }
 
     private List<String> resolveCarClasses(String requestedCarClass) {
@@ -325,7 +338,19 @@ public class TripPlanner {
             freshness = anyPresent ? worst(freshness, loaded.freshness()) : loaded.freshness();
             anyPresent = true;
         }
-        return new HotelResult(cheapest, freshness);
+        return new HotelResult(cheapest, hotelFreshness(cheapest, freshness));
+    }
+
+    /**
+     * Cache age says nothing about a synthetic price, which is always a fresh computation of
+     * placeholder data. Reporting it as UNAVAILABLE matches the fuel fallback, so a reader can rely
+     * on any value other than FRESH or STALE meaning no live data stood behind the figure.
+     */
+    static DataFreshness hotelFreshness(HotelOffer cheapest, DataFreshness cacheFreshness) {
+        if (cheapest != null && SyntheticHotelProvider.SOURCE.equals(cheapest.source())) {
+            return DataFreshness.UNAVAILABLE;
+        }
+        return cacheFreshness;
     }
 
     private TripOption buildOption(RentalQuote quote, CombinedTolls tolls, FuelEstimate fuel, HotelResult hotel,

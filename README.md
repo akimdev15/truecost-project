@@ -145,7 +145,7 @@ Each row cites the validation check that produced the evidence, from `scripts/va
 | Out of bounds rejection, FR14 | Not built | A12, I-01 |
 | Kafka publish and schema registry | Works | K1 to K3 |
 | Hot route prefetch | Works | observed live in four runs with `scripts/observe-prefetch.sh` |
-| Fallback marking | Partial | provenance marks every fallback, freshness reports a synthetic hotel as FRESH, A15 and I-18 |
+| Fallback marking | Works | provenance and freshness both mark every fallback, and the UI badges them, A15 and I-18 |
 | Metrics | Works | M1, M2 |
 | Tracing | Partial | works across the Kafka hop, breaks at the virtual thread fan-out, O2 and I-14 |
 | Accuracy against real costs | Not measured | no ground truth yet, the golden set is 0 of 20, I-02 |

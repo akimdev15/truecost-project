@@ -194,8 +194,8 @@ There are none to configure. This is a deliberate scope decision rather than an 
 - Hotel falls back to its synthetic path when no Amadeus key is set.
 
 Every one of these paths is marked in the response `provenance` block, so a fallback is visible
-rather than blended in. The `freshness` block is less reliable for this. Fuel reports UNAVAILABLE
-there, but a synthetic hotel still reports FRESH, I-18.
+rather than blended in. The `freshness` block agrees, fuel on its fallback and a synthetic hotel
+both report UNAVAILABLE, I-18.
 
 ## Shutting down
 

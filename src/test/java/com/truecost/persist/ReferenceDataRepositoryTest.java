@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.truecost.seed.SeedLoader;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -53,6 +55,9 @@ class ReferenceDataRepositoryTest {
     @Autowired
     private VehicleClassRepository vehicleClassRepository;
 
+    @Autowired
+    private ReferenceSnapshotRepository snapshotRepository;
+
     @BeforeAll
     void seedOnce() {
         seedLoader.loadAll();
@@ -99,6 +104,19 @@ class ReferenceDataRepositoryTest {
 
         assertThat(rateRepository.findRateCents("GWB", "MIDSIZE", "EZPASS", beforeTariffChange)).contains(1606L);
         assertThat(rateRepository.findRateCents("GWB", "MIDSIZE", "EZPASS", afterTariffChange)).contains(1679L);
+    }
+
+    @Test
+    void snapshotDateComesFromTheSeed() {
+        assertThat(snapshotRepository.findSnapshotDate()).contains(LocalDate.of(2026, 7, 17));
+    }
+
+    @Test
+    void latestRateEffectiveDateIsBoundedByTheTripDate() {
+        assertThat(rateRepository.findLatestEffectiveDate(List.of("GWB"), LocalDate.of(2025, 7, 1)))
+                .contains(LocalDate.of(2025, 1, 5));
+        assertThat(rateRepository.findLatestEffectiveDate(List.of("GWB"), LocalDate.of(2026, 7, 24)))
+                .contains(LocalDate.of(2026, 1, 4));
     }
 
     @Test

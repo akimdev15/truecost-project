@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class SyntheticHotelProvider implements HotelProvider {
 
+    public static final String SOURCE = "SYNTHETIC";
+
     private static final Map<String, long[]> NIGHTLY_RATE_BAND_CENTS_BY_DESTINATION = Map.of(
             "PHL", new long[] {11000, 18000},
             "BOS", new long[] {15000, 24000},
@@ -29,7 +31,7 @@ public class SyntheticHotelProvider implements HotelProvider {
 
     @Override
     public String name() {
-        return "SYNTHETIC";
+        return SOURCE;
     }
 
     @Override

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Optional;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -58,6 +59,20 @@ public class TollRateRepository {
                 .param("isoDayOfWeek", isoDayOfWeek)
                 .param("tripTime", tripTime)
                 .query(Long.class)
+                .optional();
+    }
+
+    public Optional<LocalDate> findLatestEffectiveDate(Collection<String> crossingCodes, LocalDate tripDate) {
+        return jdbcClient.sql("""
+                        select max(tr.effective_date)
+                        from toll_rate tr
+                        join toll_crossing tc on tc.id = tr.crossing_id
+                        where tc.code in (:crossingCodes)
+                          and tr.effective_date <= :tripDate
+                        """)
+                .param("crossingCodes", crossingCodes)
+                .param("tripDate", tripDate)
+                .query(LocalDate.class)
                 .optional();
     }
 

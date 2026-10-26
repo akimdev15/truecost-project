@@ -35,10 +35,9 @@ rates are user supplied input by design, and the fuel and hotel connectors fall 
 documented static price and a synthetic path respectively. Every fallback is marked in the
 response `provenance` block. The `freshness` block is not consistent about it, see below.
 
-**A synthetic hotel price is reported as FRESH.** `freshness.hotel` tracks how old the cached
-value is, not where it came from, so a synthetic hotel estimate reads FRESH while fuel on its
-fallback reads UNAVAILABLE. Read `provenance.hotelSource` to see that the hotel is synthetic. The
-demo UI does not show it either, its SYNTHETIC badge is the rental source. Tracked as I-18.
+**A fallback value reads UNAVAILABLE in freshness, not FRESH.** A synthetic hotel and the static
+fuel price both report UNAVAILABLE, so that value means no live data rather than a failed load.
+Read `provenance` to tell the two apart. Fixed on branch response-transparency, I-18.
 
 ## Environment and build
 

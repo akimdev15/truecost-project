@@ -2,6 +2,7 @@ package com.truecost.seed;
 
 import com.truecost.persist.CongestionCreditRepository;
 import com.truecost.persist.CongestionScheduleRepository;
+import com.truecost.persist.ReferenceSnapshotRepository;
 import com.truecost.persist.RentalCompanyRepository;
 import com.truecost.persist.TollCrossingRepository;
 import com.truecost.persist.TollProgramRepository;
@@ -39,6 +40,7 @@ public class SeedLoader {
     private final CongestionScheduleRepository congestionScheduleRepository;
     private final CongestionCreditRepository congestionCreditRepository;
     private final TollProgramRepository programRepository;
+    private final ReferenceSnapshotRepository snapshotRepository;
     private final Path seedDir;
 
     public SeedLoader(
@@ -50,6 +52,7 @@ public class SeedLoader {
             CongestionScheduleRepository congestionScheduleRepository,
             CongestionCreditRepository congestionCreditRepository,
             TollProgramRepository programRepository,
+            ReferenceSnapshotRepository snapshotRepository,
             @Value("${truecost.seed.dir:data/seeds}") String seedDir) {
         this.jdbcClient = jdbcClient;
         this.crossingRepository = crossingRepository;
@@ -59,6 +62,7 @@ public class SeedLoader {
         this.congestionScheduleRepository = congestionScheduleRepository;
         this.congestionCreditRepository = congestionCreditRepository;
         this.programRepository = programRepository;
+        this.snapshotRepository = snapshotRepository;
         this.seedDir = Path.of(seedDir);
     }
 
@@ -71,6 +75,7 @@ public class SeedLoader {
         int tollRates = loadTollRates();
         int[] congestionCounts = loadCongestion();
         int tollPrograms = loadTollPrograms();
+        loadSnapshotDate();
         int companies = companyRepository.count();
 
         SeedSummary summary = new SeedSummary(
@@ -89,7 +94,8 @@ public class SeedLoader {
         jdbcClient.sql("""
                         truncate table
                             toll_crossing, vehicle_class, rental_company,
-                            toll_rate, congestion_schedule, congestion_credit, toll_program
+                            toll_rate, congestion_schedule, congestion_credit, toll_program,
+                            reference_snapshot
                         restart identity cascade
                         """)
                 .update();
@@ -159,6 +165,14 @@ public class SeedLoader {
             count++;
         }
         return count;
+    }
+
+    private void loadSnapshotDate() {
+        List<String[]> snapshot = rows("snapshot.csv");
+        if (snapshot.size() != 1) {
+            throw new IllegalStateException("snapshot.csv must hold exactly one data row, found " + snapshot.size());
+        }
+        snapshotRepository.insert(LocalDate.parse(snapshot.get(0)[0]));
     }
 
     /** Monday-first seven character binary string to the Monday-bit-zero SMALLINT bitmask. */
