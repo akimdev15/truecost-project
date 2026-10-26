@@ -123,7 +123,34 @@
     return span;
   }
 
-  function renderFreshnessNote(freshness) {
+  function formatSnapshotDate(isoDate) {
+    var parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate || '');
+    if (!parts) return null;
+    return MONTH_NAMES[parseInt(parts[2], 10) - 1] + ' ' + parseInt(parts[3], 10) + ', ' + parts[1];
+  }
+
+  function renderRateSnapshot(snapshot) {
+    var el = document.getElementById('rate-snapshot-note');
+    var snapshotDate = snapshot && formatSnapshotDate(snapshot.snapshotDate);
+    if (!snapshotDate) {
+      el.hidden = true;
+      el.textContent = '';
+      return;
+    }
+    var text = 'Toll and program rates verified ' + snapshotDate + '.';
+    var tollDate = formatSnapshotDate(snapshot.latestTollRateEffectiveDate);
+    var programDate = formatSnapshotDate(snapshot.latestTollProgramEffectiveDate);
+    var effective = [];
+    if (tollDate) effective.push('toll rates in effect ' + tollDate);
+    if (programDate) effective.push('company toll programs in effect ' + programDate);
+    if (effective.length > 0) {
+      text += ' Latest rows used, ' + effective.join(' and ') + '.';
+    }
+    el.textContent = text;
+    el.hidden = false;
+  }
+
+  function renderFreshnessNote(freshness, hotelIsSynthetic) {
     var container = document.getElementById('freshness-note');
     container.innerHTML = '';
     if (!freshness) {
@@ -133,6 +160,7 @@
     var labels = { route: 'Route', tolls: 'Tolls', hotel: 'Hotel' };
     var any = false;
     Object.keys(labels).forEach(function (key) {
+      if (key === 'hotel' && hotelIsSynthetic) return;
       var value = freshness[key];
       if (value && value !== 'FRESH') {
         any = true;
@@ -178,6 +206,14 @@
       savingsEl.textContent = '';
       savingsEl.hidden = true;
     }
+  }
+
+  function withBadge(row, text) {
+    var labelTd = row.firstChild;
+    var tag = badge('fallback', text);
+    tag.classList.add('badge-inline');
+    labelTd.appendChild(tag);
+    return row;
   }
 
   function breakdownRow(label, cents, className) {
@@ -297,7 +333,7 @@
   }
 
   /**
-   * A stacked proportion bar of where the true total goes, so the audience sees the composition at
+   * A stacked proportion bar of where the estimated total goes, so the audience sees the composition at
    * a glance. Colors match the shared legend, the dataviz skill's validated categorical set.
    */
   function renderCostBar(option) {
@@ -332,7 +368,7 @@
     wrap.innerHTML = '';
     var intro = document.createElement('p');
     intro.className = 'results-legend-intro';
-    intro.textContent = 'Real all-in cost per company. The bar shows where the money goes.';
+    intro.textContent = 'Estimated all-in cost per company. The bar shows where the money goes.';
     wrap.appendChild(intro);
     var legend = document.createElement('div');
     legend.className = 'cost-legend';
@@ -545,11 +581,9 @@
 
     var badges = document.createElement('div');
     badges.className = 'option-badges';
-    if (option.provenance && option.provenance.rentalSource) {
-      badges.appendChild(badge('provenance', option.provenance.rentalSource));
-    }
-    if (option.provenance && option.provenance.fuelPriceIsFallback) {
-      badges.appendChild(badge('stale', 'Fuel estimate'));
+    var provenance = option.provenance || {};
+    if (provenance.rentalSource) {
+      badges.appendChild(badge('provenance', provenance.rentalSource));
     }
     if (option.partial) {
       badges.appendChild(badge('partial', 'Partial'));
@@ -575,7 +609,11 @@
     var tbody = document.createElement('tbody');
 
     tbody.appendChild(groupHeadRow('This rental'));
-    tbody.appendChild(breakdownRow('Base rental', option.rentalCents));
+    var rentalRow = breakdownRow('Base rental', option.rentalCents);
+    if (provenance.rentalSource === 'SYNTHETIC') {
+      withBadge(rentalRow, 'Synthetic');
+    }
+    tbody.appendChild(rentalRow);
     var tollPayCents = option.tollProgramFeeCents + option.tollTotalCents;
     var tollLabel = option.strategy
       ? 'Tolls · ' + (STRATEGY_LABELS[option.strategy.kind] || option.strategy.kind).toLowerCase()
@@ -585,10 +623,18 @@
     tbody.appendChild(groupHeadRow('Same for every option'));
     var congestionNote = option.congestionCents > 0 ? 'NYC Congestion Relief Zone, once per day' : null;
     tbody.appendChild(breakdownRowNoted('Congestion pricing', option.congestionCents, congestionNote));
-    tbody.appendChild(breakdownRow(fuelLabel(option), option.fuelCents));
-    tbody.appendChild(breakdownRow('Hotel', option.hotelCents));
+    var fuelRow = breakdownRow(fuelLabel(option), option.fuelCents);
+    if (provenance.fuelPriceIsFallback) {
+      withBadge(fuelRow, 'Fallback price');
+    }
+    tbody.appendChild(fuelRow);
+    var hotelRow = breakdownRow('Hotel', option.hotelCents);
+    if (provenance.hotelSource === 'SYNTHETIC') {
+      withBadge(hotelRow, 'Synthetic');
+    }
+    tbody.appendChild(hotelRow);
 
-    tbody.appendChild(breakdownRow('True total', option.trueTotalCents, 'total-row'));
+    tbody.appendChild(breakdownRow('Estimated total', option.trueTotalCents, 'total-row'));
     table.appendChild(tbody);
     body.appendChild(table);
 
@@ -619,7 +665,11 @@
     lastDistanceMiles = (data.context && typeof data.context.totalDistanceMiles === 'number')
       ? data.context.totalDistanceMiles : null;
     renderTripHeader(data.context);
-    renderFreshnessNote(data.freshness);
+    var hotelIsSynthetic = (data.options || []).some(function (option) {
+      return option.provenance && option.provenance.hotelSource === 'SYNTHETIC';
+    });
+    renderFreshnessNote(data.freshness, hotelIsSynthetic);
+    renderRateSnapshot(data.rateSnapshot);
     renderRecommendation(data.recommendation, (data.options || [])[0]);
     renderResultsLegend();
 
@@ -1027,6 +1077,8 @@
   /**
    * One click loads a known-good trip and plans it, so the demo can show the winning toll strategy
    * shift across scenarios, a company plan, a personal tag, and a toll free route, without typing.
+   * The pricing mode, typed quotes, and car class of a manual search are left alone so a click
+   * never silently discards what the renter entered, the quotes then price the new trip.
    */
   function applyPreset(name) {
     var p = PRESETS[name];
@@ -1041,11 +1093,14 @@
     document.getElementById('destLng').value = p.destLng;
     document.getElementById('destinationCode').value = p.destCode;
     document.getElementById('hasPersonalEzpass').checked = p.ezpass;
-    document.getElementById('carClass').value = p.carClass;
 
-    var autoRadio = document.getElementById('mode-auto');
-    autoRadio.checked = true;
-    autoRadio.dispatchEvent(new Event('change'));
+    var manual = document.getElementById('mode-manual').checked;
+    if (!manual) {
+      document.getElementById('carClass').value = p.carClass;
+    } else if (collectManualOverrides().length === 0) {
+      showError('Scenario loaded. Manual mode is selected, so enter at least one company rate or switch to Auto, then plan the trip.');
+      return;
+    }
 
     document.getElementById('trip-form').requestSubmit();
   }
