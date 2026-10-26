@@ -39,7 +39,7 @@ cd truecost-project
 ```
 
 That is the whole thing. `verify` compiles both deployables, generates the Avro classes, runs all
-89 tests, and repackages the two boot jars. The integration tests start their own Postgres, Redis,
+119 tests, and repackages the two boot jars. The integration tests start their own Postgres, Redis,
 Kafka, and Apicurio through Testcontainers and stub every outbound HTTP provider with WireMock, so
 nothing external is required and no credentials are involved.
 
