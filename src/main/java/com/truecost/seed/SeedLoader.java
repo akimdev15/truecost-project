@@ -1,6 +1,7 @@
 package com.truecost.seed;
 
 import com.truecost.persist.CongestionCreditRepository;
+import com.truecost.persist.CoverageRegionRepository;
 import com.truecost.persist.CongestionScheduleRepository;
 import com.truecost.persist.RentalCompanyRepository;
 import com.truecost.persist.TollCrossingRepository;
@@ -39,6 +40,7 @@ public class SeedLoader {
     private final CongestionScheduleRepository congestionScheduleRepository;
     private final CongestionCreditRepository congestionCreditRepository;
     private final TollProgramRepository programRepository;
+    private final CoverageRegionRepository coverageRegionRepository;
     private final Path seedDir;
 
     public SeedLoader(
@@ -50,6 +52,7 @@ public class SeedLoader {
             CongestionScheduleRepository congestionScheduleRepository,
             CongestionCreditRepository congestionCreditRepository,
             TollProgramRepository programRepository,
+            CoverageRegionRepository coverageRegionRepository,
             @Value("${truecost.seed.dir:data/seeds}") String seedDir) {
         this.jdbcClient = jdbcClient;
         this.crossingRepository = crossingRepository;
@@ -59,6 +62,7 @@ public class SeedLoader {
         this.congestionScheduleRepository = congestionScheduleRepository;
         this.congestionCreditRepository = congestionCreditRepository;
         this.programRepository = programRepository;
+        this.coverageRegionRepository = coverageRegionRepository;
         this.seedDir = Path.of(seedDir);
     }
 
@@ -71,16 +75,17 @@ public class SeedLoader {
         int tollRates = loadTollRates();
         int[] congestionCounts = loadCongestion();
         int tollPrograms = loadTollPrograms();
+        int coverageRegions = loadCoverageRegions();
         int companies = companyRepository.count();
 
         SeedSummary summary = new SeedSummary(
-                vehicleClasses, crossings, tollRates, congestionCounts[0], congestionCounts[1], companies, tollPrograms);
+                vehicleClasses, crossings, tollRates, congestionCounts[0], congestionCounts[1], companies, tollPrograms, coverageRegions);
 
         log.info("seed loaded, vehicleClasses={} crossings={} tollRates={} congestionSchedules={} "
-                        + "congestionCredits={} rentalCompanies={} tollPrograms={}",
+                        + "congestionCredits={} rentalCompanies={} tollPrograms={} coverageRegions={}",
                 summary.vehicleClasses(), summary.crossings(), summary.tollRates(),
                 summary.congestionSchedules(), summary.congestionCredits(), summary.rentalCompanies(),
-                summary.tollPrograms());
+                summary.tollPrograms(), summary.coverageRegions());
 
         return summary;
     }
@@ -89,7 +94,7 @@ public class SeedLoader {
         jdbcClient.sql("""
                         truncate table
                             toll_crossing, vehicle_class, rental_company,
-                            toll_rate, congestion_schedule, congestion_credit, toll_program
+                            toll_rate, congestion_schedule, congestion_credit, toll_program, coverage_region
                         restart identity cascade
                         """)
                 .update();
@@ -145,6 +150,17 @@ public class SeedLoader {
             }
         }
         return new int[] {scheduleCount, creditCount};
+    }
+
+    private int loadCoverageRegions() {
+        int count = 0;
+        for (String[] f : rows("coverage_regions.csv")) {
+            coverageRegionRepository.insert(f[0], f[1],
+                    Double.parseDouble(f[2]), Double.parseDouble(f[3]),
+                    Double.parseDouble(f[4]), Double.parseDouble(f[5]));
+            count++;
+        }
+        return count;
     }
 
     private int loadTollPrograms() {

@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         "com.truecost.stream",
         "com.truecost.aggregate",
         "com.truecost.cache",
+        "com.truecost.coverage",
         "com.truecost.persist",
         "com.truecost.provider",
         "com.truecost.route",

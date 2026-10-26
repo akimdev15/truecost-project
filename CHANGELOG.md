@@ -7,6 +7,11 @@ Dates are the dates the work was committed, not the dates it was planned.
 
 ## [Unreleased]
 
+### Added, FR14 coverage rejection
+- `data/seeds/coverage_regions.csv`, migration `V3__coverage_regions.sql`, and the `coverage_region`
+  table. A trip whose origin, destination, or routed path leaves these rectangles now returns 422
+  with code `OUT_OF_COVERAGE` and no total. Closes I-01 and I-09, opens I-21.
+
 ### Added, Hard Stop 3 validation
 - `scripts/validate.sh`, 42 graded checks against a running stack across the toolchain, the
   reference data, routing, API correctness, the user supplied rate path, Kafka and the schema

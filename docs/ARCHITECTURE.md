@@ -91,5 +91,5 @@ A provider that misses the deadline yields a flagged fallback rather than blocki
 ## What is deliberately not here
 
 The accuracy evaluation runner is Phase 9 and is not built, so `make eval` prints a pointer and
-exits. FR14 out of bounds rejection is specified and not implemented. Both are tracked in
-`docs/RISK_LOG.md` as I-02 and I-01 and are the first two items of Sprint 2.
+exits, tracked in `docs/RISK_LOG.md` as I-02. FR14 out of bounds rejection is built, with a residual
+Delaware River gap tracked as I-21.

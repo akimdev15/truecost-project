@@ -7,20 +7,19 @@ Current as of 11 October 2026, Hard Stop 3 validation. Baseline `v0.1.0-baseline
 
 ## Functional limitations
 
-**Routes outside the seeded toll coverage are not rejected yet.** A trip toward Boston or
-Washington DC returns a ranking rather than an error. The ranking is biased, not merely
-incomplete, because missing crossings lower the personal E-ZPass and per crossing totals while
-leaving the unlimited plan flat, which pushes the recommendation toward per crossing or a personal
-tag. A Manhattan to Boston trip found no tolled crossing at all and recommended per crossing at the
-congestion charge alone. FR14
-specifies rejection and it is the top open work item. Until it lands, treat any result whose
-destination falls outside the New York metro, New Jersey, Connecticut, Hudson Valley, and Long
-Island region as not meaningful. Tracked as I-01.
+**Routes outside the seeded toll coverage are rejected, with one open gap.** A trip whose origin,
+destination, or routed path leaves the rectangles in `data/seeds/coverage_regions.csv` returns 422
+with code `OUT_OF_COVERAGE` and no total, because a partial total is biased toward per crossing and
+a personal tag. The rectangles are an approximation of where every tolled facility is seeded. Tolled
+Delaware River bridges that are not in `crossings.csv` sit on or inside the Philadelphia and New
+Jersey rectangles, so a Philadelphia trip can still omit a toll. Tracked as I-21. The coverage
+regions are read once on first use, so a reseed takes effect after an API restart. Fixed on branch
+`fr14-coverage` for I-01.
 
 **The clipped map makes an out of bounds route look short rather than failed.** OSRM is served a
 map clipped to `-75.35,39.85,-71.5,41.8`. A request toward a city outside it snaps to the nearest
 point inside the box and returns a real looking route that stops at the boundary. Check the
-snapped waypoint in the response if a duration looks too small. Tracked as I-09.
+snapped waypoint in the response if a duration looks too small. Tracked as I-09, and the coverage check now rejects such a route before it is priced.
 
 **Congestion pricing is seeded only up to the 2025 rate.** The 2028 and 2031 increases are not in
 `congestion.csv`, so a trip dated 2028 or later is priced at 2025 rates. Every evaluation trip is

@@ -1,0 +1,7 @@
+code,name,min_lat,min_lng,max_lat,max_lng
+NYC_METRO,New York City and western Long Island,40.45,-74.30,41.00,-73.40
+LONG_ISLAND_EAST,Eastern Long Island to Montauk,40.50,-73.45,41.20,-71.75
+NEW_JERSEY,New Jersey from the Delaware River to the Hudson,39.75,-75.20,41.36,-73.85
+HUDSON_VALLEY,Hudson Valley and Thruway corridor to Kingston,40.95,-74.55,42.05,-73.55
+CT_SOUTHWEST,Southwestern Connecticut to Norwalk,40.95,-73.75,41.20,-73.35
+PHILADELPHIA_METRO,Philadelphia metro area west of the Delaware River,39.75,-76.00,40.35,-74.80
