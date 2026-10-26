@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "truecost/eval/golden/scenario.schema.json",
+  "title": "TrueCost golden scenario",
+  "description": "One trip plus the hand collected reference cost per company and component. A draft may carry nulls. A complete scenario may not.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "status", "grid", "request", "reference"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "status": { "enum": ["draft", "complete"] },
+    "description": { "type": ["string", "null"] },
+    "notes": { "type": ["string", "null"] },
+    "grid": { "$ref": "#/$defs/grid" },
+    "request": { "$ref": "#/$defs/requestDraft" },
+    "reference": { "$ref": "#/$defs/referenceDraft" }
+  },
+  "if": { "properties": { "status": { "const": "complete" } } },
+  "then": {
+    "properties": {
+      "grid": { "$ref": "#/$defs/gridComplete" },
+      "request": { "$ref": "#/$defs/requestComplete" },
+      "reference": { "$ref": "#/$defs/referenceComplete" }
+    }
+  },
+  "$defs": {
+    "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "instant": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$" },
+    "strategy": { "enum": ["PERSONAL_TAG", "COMPANY_PER_CROSSING", "COMPANY_UNLIMITED", "NO_ARRANGEMENT"] },
+    "companyCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "grid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["crossingBand", "durationBand"],
+      "properties": {
+        "crossingBand": { "enum": ["0-1", "2-3", "4+", null] },
+        "durationBand": { "enum": ["1-2", "3", "4+", null] }
+      }
+    },
+    "gridComplete": {
+      "type": "object",
+      "properties": {
+        "crossingBand": { "enum": ["0-1", "2-3", "4+"] },
+        "durationBand": { "enum": ["1-2", "3", "4+"] }
+      }
+    },
+    "requestDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["originLat", "originLng", "pickupLocationCode", "destLat", "destLng", "destinationCode", "departureAt", "returnAt", "hasPersonalEzpass", "carClass", "rentalRateOverrides"],
+      "properties": {
+        "originLat": { "type": ["number", "null"] },
+        "originLng": { "type": ["number", "null"] },
+        "pickupLocationCode": { "type": ["string", "null"] },
+        "destLat": { "type": ["number", "null"] },
+        "destLng": { "type": ["number", "null"] },
+        "destinationCode": { "type": ["string", "null"] },
+        "departureAt": { "type": ["string", "null"] },
+        "returnAt": { "type": ["string", "null"] },
+        "hasPersonalEzpass": { "type": ["boolean", "null"] },
+        "carClass": { "type": ["string", "null"] },
+        "rentalRateOverrides": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["companyCode", "companyName", "totalCents"],
+            "properties": {
+              "companyCode": { "type": ["string", "null"] },
+              "companyName": { "type": ["string", "null"] },
+              "totalCents": { "type": ["integer", "null"], "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "requestComplete": {
+      "type": "object",
+      "properties": {
+        "originLat": { "type": "number" },
+        "originLng": { "type": "number" },
+        "pickupLocationCode": { "type": "string", "minLength": 1 },
+        "destLat": { "type": "number" },
+        "destLng": { "type": "number" },
+        "destinationCode": { "type": "string", "minLength": 1 },
+        "departureAt": { "$ref": "#/$defs/instant" },
+        "returnAt": { "$ref": "#/$defs/instant" },
+        "hasPersonalEzpass": { "type": "boolean" },
+        "carClass": { "type": "string", "minLength": 1 },
+        "rentalRateOverrides": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "properties": {
+              "companyCode": { "$ref": "#/$defs/companyCode" },
+              "companyName": { "type": "string", "minLength": 1 },
+              "totalCents": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "centsRefDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source", "capturedOn"],
+      "properties": {
+        "value": { "type": ["integer", "null"], "minimum": 0 },
+        "source": { "type": ["string", "null"] },
+        "capturedOn": { "type": ["string", "null"] }
+      }
+    },
+    "centsRefComplete": {
+      "type": "object",
+      "properties": {
+        "value": { "type": "integer", "minimum": 0 },
+        "source": { "type": "string", "minLength": 1 },
+        "capturedOn": { "$ref": "#/$defs/date" }
+      }
+    },
+    "strategyRefDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source", "capturedOn"],
+      "properties": {
+        "value": { "enum": ["PERSONAL_TAG", "COMPANY_PER_CROSSING", "COMPANY_UNLIMITED", "NO_ARRANGEMENT", null] },
+        "source": { "type": ["string", "null"] },
+        "capturedOn": { "type": ["string", "null"] }
+      }
+    },
+    "strategyRefComplete": {
+      "type": "object",
+      "properties": {
+        "value": { "$ref": "#/$defs/strategy" },
+        "source": { "type": "string", "minLength": 1 },
+        "capturedOn": { "$ref": "#/$defs/date" }
+      }
+    },
+    "companyRefDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["components", "tollStrategy"],
+      "properties": {
+        "components": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rental", "tollProgramFee", "tolls", "congestion", "fuel", "hotel"],
+          "properties": {
+            "rental": { "$ref": "#/$defs/centsRefDraft" },
+            "tollProgramFee": { "$ref": "#/$defs/centsRefDraft" },
+            "tolls": { "$ref": "#/$defs/centsRefDraft" },
+            "congestion": { "$ref": "#/$defs/centsRefDraft" },
+            "fuel": { "$ref": "#/$defs/centsRefDraft" },
+            "hotel": { "$ref": "#/$defs/centsRefDraft" }
+          }
+        },
+        "tollStrategy": { "$ref": "#/$defs/strategyRefDraft" }
+      }
+    },
+    "companyRefComplete": {
+      "type": "object",
+      "properties": {
+        "components": {
+          "type": "object",
+          "properties": {
+            "rental": { "$ref": "#/$defs/centsRefComplete" },
+            "tollProgramFee": { "$ref": "#/$defs/centsRefComplete" },
+            "tolls": { "$ref": "#/$defs/centsRefComplete" },
+            "congestion": { "$ref": "#/$defs/centsRefComplete" },
+            "fuel": { "$ref": "#/$defs/centsRefComplete" },
+            "hotel": { "$ref": "#/$defs/centsRefComplete" }
+          }
+        },
+        "tollStrategy": { "$ref": "#/$defs/strategyRefComplete" }
+      }
+    },
+    "referenceDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cheapestCompany", "companies"],
+      "properties": {
+        "cheapestCompany": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "source", "capturedOn"],
+          "properties": {
+            "value": { "type": ["string", "null"] },
+            "source": { "type": ["string", "null"] },
+            "capturedOn": { "type": ["string", "null"] }
+          }
+        },
+        "companies": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/companyCode" },
+          "additionalProperties": { "$ref": "#/$defs/companyRefDraft" }
+        }
+      }
+    },
+    "referenceComplete": {
+      "type": "object",
+      "properties": {
+        "cheapestCompany": {
+          "type": "object",
+          "properties": {
+            "value": { "$ref": "#/$defs/companyCode" },
+            "source": { "type": "string", "minLength": 1 },
+            "capturedOn": { "$ref": "#/$defs/date" }
+          }
+        },
+        "companies": {
+          "type": "object",
+          "minProperties": 2,
+          "additionalProperties": { "$ref": "#/$defs/companyRefComplete" }
+        }
+      }
+    }
+  }
+}

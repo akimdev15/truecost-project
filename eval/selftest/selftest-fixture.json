@@ -1,0 +1,367 @@
+{
+  "fixture": true,
+  "note": "Every number in this file is synthetic test data invented to exercise the scoring math. None of it is ground truth and none of it describes a real rental, toll, fee, fuel price, or hotel.",
+  "scenarios": [
+    {
+      "id": "selftest-1",
+      "status": "complete",
+      "description": "Synthetic scoring fixture, values are not ground truth",
+      "notes": null,
+      "grid": {
+        "crossingBand": "0-1",
+        "durationBand": "1-2"
+      },
+      "request": {
+        "originLat": 0.0,
+        "originLng": 0.0,
+        "pickupLocationCode": "TST",
+        "destLat": 0.0,
+        "destLng": 0.0,
+        "destinationCode": "TST",
+        "departureAt": "2000-01-01T00:00:00Z",
+        "returnAt": "2000-01-03T00:00:00Z",
+        "hasPersonalEzpass": false,
+        "carClass": "MIDSIZE",
+        "rentalRateOverrides": [
+          {
+            "companyCode": "TESTCO_A",
+            "companyName": "TESTCO_A",
+            "totalCents": 10000
+          },
+          {
+            "companyCode": "TESTCO_B",
+            "companyName": "TESTCO_B",
+            "totalCents": 8000
+          }
+        ]
+      },
+      "reference": {
+        "cheapestCompany": {
+          "value": "TESTCO_B",
+          "source": "Synthetic test fixture, not a real source",
+          "capturedOn": "2000-01-01"
+        },
+        "companies": {
+          "TESTCO_A": {
+            "components": {
+              "rental": {
+                "value": 10000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "tollProgramFee": {
+                "value": 1000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "tolls": {
+                "value": 0,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "congestion": {
+                "value": 0,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "fuel": {
+                "value": 2000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "hotel": {
+                "value": 7000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              }
+            },
+            "tollStrategy": {
+              "value": "COMPANY_UNLIMITED",
+              "source": "Synthetic test fixture, not a real source",
+              "capturedOn": "2000-01-01"
+            }
+          },
+          "TESTCO_B": {
+            "components": {
+              "rental": {
+                "value": 8000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "tollProgramFee": {
+                "value": 1500,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "tolls": {
+                "value": 500,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "congestion": {
+                "value": 0,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "fuel": {
+                "value": 2000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "hotel": {
+                "value": 7000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              }
+            },
+            "tollStrategy": {
+              "value": "COMPANY_PER_CROSSING",
+              "source": "Synthetic test fixture, not a real source",
+              "capturedOn": "2000-01-01"
+            }
+          }
+        }
+      },
+      "mockResponse": {
+        "options": [
+          {
+            "companyCode": "TESTCO_A",
+            "rentalCents": 10000,
+            "tollProgramFeeCents": 1000,
+            "tollTotalCents": 0,
+            "congestionCents": 0,
+            "fuelCents": 2200,
+            "hotelCents": 7000,
+            "trueTotalCents": 20200,
+            "strategy": {
+              "kind": "COMPANY_UNLIMITED"
+            },
+            "provenance": {
+              "rentalSource": "USER",
+              "fuelPriceIsFallback": false,
+              "hotelSource": "LIVE"
+            },
+            "partial": false
+          },
+          {
+            "companyCode": "TESTCO_B",
+            "rentalCents": 8000,
+            "tollProgramFeeCents": 1500,
+            "tollTotalCents": 880,
+            "congestionCents": 0,
+            "fuelCents": 2000,
+            "hotelCents": 7000,
+            "trueTotalCents": 19380,
+            "strategy": {
+              "kind": "COMPANY_PER_CROSSING"
+            },
+            "provenance": {
+              "rentalSource": "USER",
+              "fuelPriceIsFallback": false,
+              "hotelSource": "LIVE"
+            },
+            "partial": false
+          }
+        ],
+        "recommendation": {
+          "companyCode": "TESTCO_B"
+        },
+        "context": {
+          "rentalDays": 2
+        }
+      }
+    },
+    {
+      "id": "selftest-2",
+      "status": "complete",
+      "description": "Synthetic scoring fixture, values are not ground truth",
+      "notes": null,
+      "grid": {
+        "crossingBand": "4+",
+        "durationBand": "4+"
+      },
+      "request": {
+        "originLat": 0.0,
+        "originLng": 0.0,
+        "pickupLocationCode": "TST",
+        "destLat": 0.0,
+        "destLng": 0.0,
+        "destinationCode": "TST",
+        "departureAt": "2000-01-01T00:00:00Z",
+        "returnAt": "2000-01-03T00:00:00Z",
+        "hasPersonalEzpass": false,
+        "carClass": "MIDSIZE",
+        "rentalRateOverrides": [
+          {
+            "companyCode": "TESTCO_A",
+            "companyName": "TESTCO_A",
+            "totalCents": 25000
+          },
+          {
+            "companyCode": "TESTCO_B",
+            "companyName": "TESTCO_B",
+            "totalCents": 24000
+          }
+        ]
+      },
+      "reference": {
+        "cheapestCompany": {
+          "value": "TESTCO_A",
+          "source": "Synthetic test fixture, not a real source",
+          "capturedOn": "2000-01-01"
+        },
+        "companies": {
+          "TESTCO_A": {
+            "components": {
+              "rental": {
+                "value": 25000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "tollProgramFee": {
+                "value": 3000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "tolls": {
+                "value": 0,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "congestion": {
+                "value": 1000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "fuel": {
+                "value": 4000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "hotel": {
+                "value": 17000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              }
+            },
+            "tollStrategy": {
+              "value": "COMPANY_UNLIMITED",
+              "source": "Synthetic test fixture, not a real source",
+              "capturedOn": "2000-01-01"
+            }
+          },
+          "TESTCO_B": {
+            "components": {
+              "rental": {
+                "value": 24000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "tollProgramFee": {
+                "value": 2000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "tolls": {
+                "value": 3000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "congestion": {
+                "value": 1000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "fuel": {
+                "value": 4000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              },
+              "hotel": {
+                "value": 17000,
+                "source": "Synthetic test fixture, not a real source",
+                "capturedOn": "2000-01-01"
+              }
+            },
+            "tollStrategy": {
+              "value": "COMPANY_PER_CROSSING",
+              "source": "Synthetic test fixture, not a real source",
+              "capturedOn": "2000-01-01"
+            }
+          }
+        }
+      },
+      "mockResponse": {
+        "options": [
+          {
+            "companyCode": "TESTCO_A",
+            "rentalCents": 25000,
+            "tollProgramFeeCents": 3000,
+            "tollTotalCents": 0,
+            "congestionCents": 1000,
+            "fuelCents": 4000,
+            "hotelCents": 19000,
+            "trueTotalCents": 52000,
+            "strategy": {
+              "kind": "COMPANY_PER_CROSSING"
+            },
+            "provenance": {
+              "rentalSource": "USER",
+              "fuelPriceIsFallback": false,
+              "hotelSource": "LIVE"
+            },
+            "partial": false
+          },
+          {
+            "companyCode": "TESTCO_B",
+            "rentalCents": 24000,
+            "tollProgramFeeCents": 2000,
+            "tollTotalCents": 2000,
+            "congestionCents": 1000,
+            "fuelCents": 4000,
+            "hotelCents": 17000,
+            "trueTotalCents": 50000,
+            "strategy": {
+              "kind": "COMPANY_PER_CROSSING"
+            },
+            "provenance": {
+              "rentalSource": "USER",
+              "fuelPriceIsFallback": false,
+              "hotelSource": "LIVE"
+            },
+            "partial": false
+          }
+        ],
+        "recommendation": {
+          "companyCode": "TESTCO_B"
+        },
+        "context": {
+          "rentalDays": 5
+        }
+      }
+    }
+  ],
+  "expected": {
+    "total.mape": 2.24019608,
+    "total.mapeCheapestOption": 3.0,
+    "total.n": 4,
+    "ranking.inversions": 1,
+    "ranking.scenarios": 2,
+    "strategy.agree": 3,
+    "strategy.n": 4,
+    "strategy.byCompany.TESTCO_A.agree": 1,
+    "strategy.byCompany.TESTCO_B.agree": 2,
+    "components.hotel.maeCents": 500,
+    "components.fuel.maeCents": 50,
+    "components.tolls.maeCents": 345,
+    "components.tolls.biasCents": -155,
+    "components.tolls.mape": 27.33333333,
+    "components.rental.maeCents": 0,
+    "byDuration.1-2.total.mape": 1.5,
+    "byDuration.1-2.ranking.inversions": 0,
+    "byDuration.4+.total.mape": 2.98039216,
+    "byDuration.4+.ranking.inversions": 1,
+    "byCrossing.0-1.total.mape": 1.5,
+    "byCrossing.4+.total.mape": 2.98039216
+  }
+}

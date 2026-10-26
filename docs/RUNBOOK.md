@@ -610,3 +610,30 @@ Each output directory holds `metadata.txt` with the commit and checksums, `respo
 `options.csv`, `timing.csv`, and `summary.txt`. The summary reports whether the chosen strategy is
 always the cheapest candidate, and the saving per trip against always buying the unlimited plan,
 which is SC9's baseline. The second run is warm, so only its timing line differs from the first.
+
+## Accuracy evaluation, Phase 9
+
+`scripts/eval.py` scores the running API against the hand collected golden scenarios in `eval/golden/scenarios/`. The scenario format and the collection procedure are in `eval/golden/README.md`. The runner never supplies a reference value.
+
+Check the scoring math on the synthetic fixture. It needs no API and no containers, and exits non zero on any mismatch:
+
+```
+make eval-selftest
+```
+
+Score every complete scenario against the API on port 8080, or on another base URL:
+
+```
+make eval
+EVAL_BASE_URL=http://localhost:9090 make eval
+```
+
+With no complete scenario the target says so, sends no request, writes nothing, and exits 0. A draft scenario is skipped with a warning. A scenario marked complete that has a null reference value, a value without a source or capture date, a company set that differs from its rate overrides, a reference rental that differs from the quoted override, or a cheapest company that is not the lowest summed reference total is refused with the field path and the run exits 1. Exit 2 means the API was unreachable or returned an error for a scenario.
+
+A scored run writes `eval/results/<UTC timestamp>/` holding `summary.txt`, `metadata.txt` with the commit, the product dirty flag, and the jar, script, schema, and per scenario checksums, and `results.json` with the per option detail and the raw responses. `results.json` is ignored by git. Pass `--out DIR` to write somewhere else:
+
+```
+python3 scripts/eval.py --out /tmp/eval-run
+```
+
+The summary reports, overall and again per duration band and per crossing band, the error per component in cents and percent, SC1 as MAPE on the true total against the 8 percent limit, SC2 as ranking inversions against a target of zero, and toll strategy agreement per company. It also counts options whose inputs came from a fallback, because a synthetic hotel or fuel price would be scored as model error when it is not.

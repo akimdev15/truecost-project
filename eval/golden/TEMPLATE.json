@@ -1,0 +1,116 @@
+{
+  "id": "scenario-id",
+  "status": "draft",
+  "description": null,
+  "notes": null,
+  "grid": {
+    "crossingBand": null,
+    "durationBand": null
+  },
+  "request": {
+    "originLat": null,
+    "originLng": null,
+    "pickupLocationCode": null,
+    "destLat": null,
+    "destLng": null,
+    "destinationCode": null,
+    "departureAt": null,
+    "returnAt": null,
+    "hasPersonalEzpass": null,
+    "carClass": null,
+    "rentalRateOverrides": [
+      {
+        "companyCode": null,
+        "companyName": null,
+        "totalCents": null
+      }
+    ]
+  },
+  "reference": {
+    "cheapestCompany": {
+      "value": null,
+      "source": null,
+      "capturedOn": null
+    },
+    "companies": {
+      "COMPANY_CODE_1": {
+        "components": {
+          "rental": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tollProgramFee": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tolls": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "congestion": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "fuel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "hotel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          }
+        },
+        "tollStrategy": {
+          "value": null,
+          "source": null,
+          "capturedOn": null
+        }
+      },
+      "COMPANY_CODE_2": {
+        "components": {
+          "rental": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tollProgramFee": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tolls": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "congestion": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "fuel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "hotel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          }
+        },
+        "tollStrategy": {
+          "value": null,
+          "source": null,
+          "capturedOn": null
+        }
+      }
+    }
+  }
+}
