@@ -538,6 +538,9 @@ Build the two jars the validation runs use:
 ./mvnw -B verify
 ```
 
+Run it with both jars stopped. `PrefetcherFlowIntegrationTest` shares the Kafka Streams state
+directory with a running prefetcher and fails to start while one is up, I-16.
+
 Validate from a clean restart. This deletes every compose volume and the prefetcher's Kafka Streams
 state, records that every store is empty, seeds from the CSVs, starts both jars, and runs every
 check. Under a minute. Exit status is the number of failing checks:
@@ -563,3 +566,21 @@ scripts/observe-prefetch.sh docs/evidence/hs3/<the run directory it printed>
 If a run fails, read `checks.txt` in its directory first. Each line names the check, and a KNOWN
 result points at the issue in `docs/RISK_LOG.md` it reproduces. The process logs are `api.log` and
 `prefetcher.log` in the same directory, and check L1 fails the run on any ERROR line in them.
+
+## Strategy sweep, Hard Stop 4
+
+Run on 25 October 2026 against a stack started with `KEEP_RUNNING=true scripts/clean-run.sh`.
+Prices 7 routes, 6 rental lengths, and both tag states, 84 trips, through the public API, then
+recomputes every candidate's program fee from `data/seeds/toll_programs.csv` alone. Takes a few
+seconds:
+
+```
+make sweep OUT=docs/evidence/hs4/sweep-run1
+make sweep OUT=docs/evidence/hs4/sweep-run2
+diff docs/evidence/hs4/sweep-run1/options.csv docs/evidence/hs4/sweep-run2/options.csv
+```
+
+Each output directory holds `metadata.txt` with the commit and checksums, `responses.jsonl`,
+`options.csv`, `timing.csv`, and `summary.txt`. The summary reports whether the chosen strategy is
+always the cheapest candidate, and the saving per trip against always buying the unlimited plan,
+which is SC9's baseline. The second run is warm, so only its timing line differs from the first.

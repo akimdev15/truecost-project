@@ -10,7 +10,9 @@ Current as of 11 October 2026, Hard Stop 3 validation. Baseline `v0.1.0-baseline
 **Routes outside the seeded toll coverage are not rejected yet.** A trip toward Boston or
 Washington DC returns a ranking rather than an error. The ranking is biased, not merely
 incomplete, because missing crossings lower the personal E-ZPass and per crossing totals while
-leaving the unlimited plan flat, which pushes the recommendation toward the unlimited plan. FR14
+leaving the unlimited plan flat, which pushes the recommendation toward per crossing or a personal
+tag. A Manhattan to Boston trip found no tolled crossing at all and recommended per crossing at the
+congestion charge alone. FR14
 specifies rejection and it is the top open work item. Until it lands, treat any result whose
 destination falls outside the New York metro, New Jersey, Connecticut, Hudson Valley, and Long
 Island region as not meaningful. Tracked as I-01.
