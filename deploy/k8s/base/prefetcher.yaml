@@ -40,17 +40,28 @@ spec:
       # Kafka Streams needs time on shutdown to commit offsets and close its state store cleanly, so
       # the grace period is generous and the app runs Spring graceful shutdown.
       terminationGracePeriodSeconds: 45
+      # Local state is disposable, Kafka Streams restores it from the changelog topics, so an emptyDir
+      # that dies with the pod is correct and avoids a stale checkpoint after a cluster rebuild.
+      volumes:
+        - name: streams-state
+          emptyDir: {}
       containers:
         - name: prefetcher
           image: truecost-prefetcher:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+          env:
+            - name: TRUECOST_STREAM_STATE_DIR
+              value: /var/lib/truecost/kafka-streams
           envFrom:
             - configMapRef:
                 name: app-config
             - secretRef:
                 name: app-secret
+          volumeMounts:
+            - name: streams-state
+              mountPath: /var/lib/truecost/kafka-streams
           # Streams plus the registry handshake makes the prefetcher slower to boot than the API, so
           # the startup probe allows up to 75 times 5 seconds before liveness and readiness take over.
           startupProbe:

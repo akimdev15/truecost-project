@@ -25,6 +25,7 @@ public class StreamsTopologyConfig {
             @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers) {
         Map<String, Object> config = new HashMap<>();
         config.put(StreamsConfig.APPLICATION_ID_CONFIG, props.applicationId());
+        config.put(StreamsConfig.STATE_DIR_CONFIG, props.stateDir());
         config.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         config.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());

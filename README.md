@@ -59,7 +59,7 @@ The fastest proof the project works needs only a JDK 21 and a running Docker dae
 about a minute warm:
 
 ```
-./mvnw -B verify   # builds both deployables and runs all 94 tests against real containers
+./mvnw -B verify   # builds both deployables and runs all 89 tests against real containers
 ```
 
 The tests start their own Postgres, Redis, Kafka, and Apicurio through Testcontainers and stub the
@@ -103,7 +103,7 @@ make clean-run # wipe every store, rebuild from the CSVs, start both jars, run e
 
 The suite is self contained, it spins up its own Postgres, Redis, Kafka, and Apicurio through
 Testcontainers and stubs the external HTTP providers with WireMock, so it needs Docker but not the
-compose stack. 94 tests across 24 classes. The acceptance tests pin the toll strategy engine
+compose stack. 89 tests across 23 classes. The acceptance tests pin the toll strategy engine
 against an independent oracle, pin a golden trip response, prove the singleflight and stale while
 revalidate guarantees, and prove the prefetcher warms the cache with no user request.
 
@@ -132,7 +132,7 @@ Each row cites the validation check that produced the evidence, from `scripts/va
 
 | Area | State | Evidence |
 | --- | --- | --- |
-| Build and test suite | Works | 94 tests, three consecutive runs, no failures |
+| Build and test suite | Works | 89 tests, three consecutive runs, no failures |
 | Clean restart from the CSVs | Works | `scripts/clean-run.sh`, nine runs, fully clean from run 6, I-16 |
 | Reference data load | Works | D1 to D9, every table matches its CSV row count |
 | Routing inside the metro box | Works | R1 |

@@ -47,7 +47,7 @@
     {
       "name": "provider",
       "type": "string",
-      "doc": "Source connector that produced the quote, for example synthetic or rapidapi, so accuracy analysis can separate synthetic from live data."
+      "doc": "Source connector that produced the quote, for example synthetic or user supplied, so accuracy analysis can separate synthetic from live data."
     },
     {
       "name": "baseRateCents",

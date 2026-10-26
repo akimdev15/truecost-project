@@ -203,9 +203,9 @@ A note on this development sandbox specifically, not a change to the script. The
 
 ```
 docker run --rm -v "$(pwd)/data/osrm:/data" stefda/osmium-tool osmium extract -b -75.35,39.85,-71.5,41.8 /data/us-northeast-latest.osm.pbf -o /data/nyc-metro.osm.pbf
-docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend osrm-extract -p /opt/car.lua /data/nyc-metro.osm.pbf
-docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend osrm-partition /data/nyc-metro.osrm
-docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend osrm-customize /data/nyc-metro.osrm
+docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend@sha256:a7091038e39a73659767f34ef2d389909b42ea80b09bd2bdca482dce2991cbad osrm-extract -p /opt/car.lua /data/nyc-metro.osm.pbf
+docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend@sha256:a7091038e39a73659767f34ef2d389909b42ea80b09bd2bdca482dce2991cbad osrm-partition /data/nyc-metro.osrm
+docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend@sha256:a7091038e39a73659767f34ef2d389909b42ea80b09bd2bdca482dce2991cbad osrm-customize /data/nyc-metro.osrm
 ```
 
 `deploy/compose.yaml`'s `osrm` service command now points at `/data/nyc-metro.osrm` by default, matching this. A later run of the clipped extract still hit the same kill at the edge expansion step whenever the rest of the app stack, api, prefetcher, kafka, and the observability containers, was up at the same time, on this same 7.7 gigabyte machine peak usage measured at 6.3 gigabytes for `osrm-extract` alone. `docker compose -f deploy/compose.yaml --profile app stop` before running the three prepare commands, then `up -d` again afterward, is what got it through cleanly.
@@ -293,14 +293,13 @@ This proves a success returns Present, a non 200 status and a body the caller's 
 Per connector WireMock contract tests, each covers a successful parse plus the required failure shapes, a timeout, an HTTP 429, and a malformed body, and each asserts every failure path returns `ProviderResult.Absent` with a reason string rather than throwing:
 
 ```
-./mvnw test -Dtest=RapidApiRentalProviderTest -Dsurefire.failIfNoSpecifiedTests=false
 ./mvnw test -Dtest=FuelCostServiceTest -Dsurefire.failIfNoSpecifiedTests=false
 ./mvnw test -Dtest=AmadeusHotelProviderTest -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
 `AmadeusHotelProviderTest` additionally stubs the OAuth2 client credentials token endpoint and covers a failed token exchange separately from a failed search, since `AmadeusHotelProvider` caches the access token in memory and only re-requests it once the cached token is within 60 seconds of its published expiry.
 
-Every real connector is disabled by default in `src/main/resources/application.yml`, `truecost.providers.rental.rapidapi.enabled`, `truecost.providers.fuel.eia.enabled`, and `truecost.providers.hotel.amadeus.enabled` all default to `false`, so a plain `make run` never dials out and never needs a key. Flipping one on for real also needs its API key or OAuth credentials, `RAPIDAPI_KEY`, `EIA_API_KEY`, `AMADEUS_CLIENT_ID`, and `AMADEUS_CLIENT_SECRET`, read from the environment at startup and empty by default, set them alongside the matching `enabled: true` override in an environment specific properties file or as `-D` overrides passed to `make run`. Signing up for these free keys is PLAN.md's Phase 4 open item for the user, RapidAPI, EIA, and Amadeus Self-Service.
+Every real connector is disabled by default in `src/main/resources/application.yml`, `truecost.providers.fuel.eia.enabled`, and `truecost.providers.hotel.amadeus.enabled` all default to `false`, so a plain `make run` never dials out and never needs a key. Flipping one on for real also needs its API key or OAuth credentials, `EIA_API_KEY`, `AMADEUS_CLIENT_ID`, and `AMADEUS_CLIENT_SECRET`, read from the environment at startup and empty by default, set them alongside the matching `enabled: true` override in an environment specific properties file or as `-D` overrides passed to `make run`. Signing up for these free keys is PLAN.md's Phase 4 open item for the user, EIA and Amadeus Self-Service.
 
 `FuelCostService` falls back to a static price per gallon, `truecost.providers.fuel.fallback-price-per-gallon`, whenever the EIA connector is disabled or a live fetch fails. Phase 5 moved the successful live price out of a private in memory field and behind the shared two tier cache under `fuel:v1:price:{region}` with a 24 hour logical TTL, since the underlying EIA series only updates weekly, so the one upstream fetch guarantee now holds across instances rather than only inside one JVM. `FuelEstimate.priceIsFallback()` tells the caller which path produced the number. Vehicle MPG always comes from `vehicle_class.default_mpg`, there is no per make or model lookup yet, that is a deliberately deferred `ponytail:` comment on `FuelCostService` itself, to revisit once a specific vehicle model enters the request pipeline rather than only a car class code.
 
@@ -333,11 +332,11 @@ curl -s localhost:8080/api/v1/trips/plan -H 'Content-Type: application/json' -d 
 }' | jq
 ```
 
-Options built from `rentalRateOverrides` carry `"rentalSource": "USER_SUPPLIED"` in their provenance rather than `SYNTHETIC` or `RAPIDAPI`, so a manually entered rate is never confused with a fetched one downstream.
+Options built from `rentalRateOverrides` carry `"rentalSource": "USER_SUPPLIED"` in their provenance rather than `SYNTHETIC`, so a manually entered rate is never confused with a fetched one downstream.
 
 The whole endpoint, cache, and aggregator layer is covered by Testcontainers backed tests that need Docker but not the compose stack up, `make test` or a plain `./mvnw test` runs them alongside every earlier phase. The four PLAN Phase 5 acceptance tests are these.
 
-The keyed singleflight, fifty concurrent identical loads collapse to exactly one upstream fetch per key, proven both at the cache unit level, in process and across two instances sharing one Redis, and end to end through HTTP against stubbed OSRM, EIA, and RapidAPI upstreams:
+The keyed singleflight, fifty concurrent identical loads collapse to exactly one upstream fetch per key, proven both at the cache unit level, in process and across two instances sharing one Redis, and end to end through HTTP against stubbed OSRM and EIA upstreams:
 
 ```
 ./mvnw test -Dtest=TwoTierCacheConcurrencyTest -Dsurefire.failIfNoSpecifiedTests=false
@@ -383,6 +382,14 @@ The build produces two boot jars from one source tree, target/truecost-0.0.1-SNA
 ```
 make prefetch
 ```
+
+The prefetcher keeps its Kafka Streams state under `./var/kafka-streams`, gitignored. Override it with `truecost.stream.state-dir` or the `TRUECOST_STREAM_STATE_DIR` environment variable. After wiping the compose volumes, remove it before starting a prefetcher by hand, otherwise it logs `TaskCorruptedException` while rebuilding from an emptied changelog:
+
+```
+rm -rf var/kafka-streams
+```
+
+In compose the state lives on a tmpfs and in Kubernetes on an emptyDir, so neither needs cleaning.
 
 Build the two images from deploy/Dockerfile, a multi stage build whose api and prefetcher targets share one compile:
 
@@ -457,7 +464,7 @@ The business metric that splits by chosen toll strategy, proven by the snapshot 
 curl -s localhost:8080/actuator/prometheus | grep truecost_strategy_chosen_total
 ```
 
-Tracing exports over OTLP to Tempo. Dev samples every trace, the default profile samples none so tests need no backend. Trace context propagates through Kafka message headers, so one trace spans the API request, the broker hop, and the prefetcher. Log lines carry the traceId and spanId, in the dev pattern as a bracketed pair and in the prod JSON as fields, so Grafana pivots from a Tempo span to its logs. The one remaining tracing step, documented in the design, is wrapping the two java.net.http outbound clients, RouteClient and ResilientHttpClient, in Micrometer Observations so the OSRM and provider calls appear as their own spans, Redis, Postgres, and Kafka already auto instrument.
+Tracing exports over OTLP to Tempo. The API reports `service.name=truecost` and the prefetcher reports `service.name=truecost-prefetcher`, so filter on either in Tempo. Dev samples every trace, the default profile samples none so tests need no backend. Trace context propagates through Kafka message headers, so one trace spans the API request, the broker hop, and the prefetcher. Log lines carry the traceId and spanId, in the dev pattern as a bracketed pair and in the prod JSON as fields, so Grafana pivots from a Tempo span to its logs. The one remaining tracing step, documented in the design, is wrapping the two java.net.http outbound clients, RouteClient and ResilientHttpClient, in Micrometer Observations so the OSRM and provider calls appear as their own spans, Redis, Postgres, and Kafka already auto instrument.
 
 Prometheus alert rules live in deploy/prometheus/alerts.yml, the p95 latency, circuit breaker open, and cache hit rate collapse alerts the phase acceptance calls for. Check them loaded:
 
@@ -538,11 +545,11 @@ Build the two jars the validation runs use:
 ./mvnw -B verify
 ```
 
-Run it with both jars stopped. `PrefetcherFlowIntegrationTest` shares the Kafka Streams state
-directory with a running prefetcher and fails to start while one is up, I-16.
+`PrefetcherFlowIntegrationTest` uses its own temporary Kafka Streams state directory, so the suite
+can run while a prefetcher is up.
 
 Validate from a clean restart. This deletes every compose volume and the prefetcher's Kafka Streams
-state, records that every store is empty, seeds from the CSVs, starts both jars, and runs every
+state under `var/kafka-streams`, records that every store is empty, seeds from the CSVs, starts both jars, and runs every
 check. Under a minute. Exit status is the number of failing checks:
 
 ```

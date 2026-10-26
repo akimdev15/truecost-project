@@ -159,7 +159,7 @@ This is the behaviour a peer will see on a clean clone.
 
 In tests the outbound HTTP providers are stubbed with WireMock rather than by these fallbacks,
 so the connector code itself is exercised against recorded responses. See
-`RapidApiRentalProviderTest`, `FuelCostServiceTest`, and `AmadeusHotelProviderTest`.
+`FuelCostServiceTest`, and `AmadeusHotelProviderTest`.
 
 ## Other endpoints
 

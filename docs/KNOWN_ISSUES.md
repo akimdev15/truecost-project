@@ -47,14 +47,14 @@ fell from 12 to 9.3 GB across the Hard Stop 3 runs. A fresh OSRM preparation nee
 `osrm-extract` runs, so it fits, but with little margin. The graph in `data/osrm` is reused, and
 every validation run checks its sha256. Tracked as I-13.
 
-**The prefetcher keeps its Kafka Streams state in the OS temp directory.** `state.dir` is not set,
-so it resolves to `$TMPDIR/kafka-streams`. That directory survives `docker compose down -v`, so
-after a clean restart the prefetcher finds a checkpoint ahead of the freshly emptied changelog,
-logs `TaskCorruptedException` at ERROR, and rebuilds part of the store. The rest of the window
-counts survive, so searches from a previous run still count toward the next run's hot routes.
-The API's own results are unaffected. `scripts/clean-run.sh` deletes
-`$TMPDIR/kafka-streams/truecost-prefetcher` before every run since run 6. If you start the
-prefetcher by hand, delete it yourself first. Tracked as I-16.
+**The prefetcher keeps its Kafka Streams state under `./var/kafka-streams`.** The directory is set
+by `truecost.stream.state-dir`, or the `TRUECOST_STREAM_STATE_DIR` environment variable, and is
+gitignored. It survives `docker compose down -v`, so a prefetcher started by hand after a clean
+restart finds a checkpoint ahead of the freshly emptied changelog, logs `TaskCorruptedException`
+at ERROR, and rebuilds part of the store. `scripts/clean-run.sh` deletes the directory before
+every run. If you start the prefetcher by hand after wiping the stack, delete `var/kafka-streams`
+yourself first. In compose and Kubernetes the state lives in a tmpfs and an emptyDir, so it dies
+with the container. Fixed as I-16.
 
 **OSRM preparation is memory hungry and fails silently.** `osrm-extract` is killed with no error
 message when Docker runs out of memory, which reads as a mysterious hang followed by nothing. The
@@ -66,10 +66,10 @@ docker compose -f deploy/compose.yaml --profile app stop
 make osrm
 ```
 
-**The OSRM image is unpinned.** `deploy/compose.yaml` and `scripts/osrm-setup.sh` both reference
-`ghcr.io/project-osrm/osrm-backend:latest`, and the car profile is read from inside that image
-rather than vendored. A new image could change routing, and different routes mean different
-detected crossings. The map file is checksummed, the image is not yet. Tracked as I-05.
+**The OSRM image is pinned by digest, the car profile is not vendored.** `deploy/compose.yaml`
+and `scripts/osrm-setup.sh` reference `ghcr.io/project-osrm/osrm-backend` at one sha256 digest, and
+the car profile is still read from inside that image. Changing the digest can change routing, so
+rerun the validation harness and update both files together. Tracked as I-05.
 
 **Port 5001, not 5000, for OSRM.** macOS AirPlay Receiver binds 5000. The compose mapping already
 accounts for this. If you are on Linux and expected the OSRM default, the host port is still 5001.

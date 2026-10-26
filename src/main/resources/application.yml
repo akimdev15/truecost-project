@@ -50,13 +50,6 @@ truecost:
     base-url: http://localhost:5001
     timeout-seconds: 5
   providers:
-    rental:
-      rapidapi:
-        enabled: false
-        base-url: https://car-rental-prices.p.rapidapi.com
-        api-key: ${RAPIDAPI_KEY:}
-        api-host: car-rental-prices.p.rapidapi.com
-        timeout-seconds: 2
     fuel:
       eia:
         enabled: false
@@ -92,6 +85,7 @@ truecost:
         retention-ms: 604800000
   stream:
     application-id: truecost-prefetcher
+    state-dir: ${TRUECOST_STREAM_STATE_DIR:./var/kafka-streams}
     window-size-minutes: 15
     hop-minutes: 5
     grace-minutes: 1
