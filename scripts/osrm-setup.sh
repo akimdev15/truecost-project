@@ -27,7 +27,7 @@ cd "$(dirname "$0")/.."
 DATA_DIR="data/osrm"
 SOURCE_NAME="us-northeast-latest"
 SOURCE_URL="https://download.geofabrik.de/north-america/us-northeast-latest.osm.pbf"
-OSRM_IMAGE="ghcr.io/project-osrm/osrm-backend:latest"
+OSRM_IMAGE="ghcr.io/project-osrm/osrm-backend@sha256:a7091038e39a73659767f34ef2d389909b42ea80b09bd2bdca482dce2991cbad"
 OSMIUM_IMAGE="stefda/osmium-tool"
 
 # Covers New York City, all of New Jersey, Connecticut, the Hudson Valley up through New Paltz,

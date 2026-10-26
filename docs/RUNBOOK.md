@@ -203,9 +203,9 @@ A note on this development sandbox specifically, not a change to the script. The
 
 ```
 docker run --rm -v "$(pwd)/data/osrm:/data" stefda/osmium-tool osmium extract -b -75.35,39.85,-71.5,41.8 /data/us-northeast-latest.osm.pbf -o /data/nyc-metro.osm.pbf
-docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend osrm-extract -p /opt/car.lua /data/nyc-metro.osm.pbf
-docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend osrm-partition /data/nyc-metro.osrm
-docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend osrm-customize /data/nyc-metro.osrm
+docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend@sha256:a7091038e39a73659767f34ef2d389909b42ea80b09bd2bdca482dce2991cbad osrm-extract -p /opt/car.lua /data/nyc-metro.osm.pbf
+docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend@sha256:a7091038e39a73659767f34ef2d389909b42ea80b09bd2bdca482dce2991cbad osrm-partition /data/nyc-metro.osrm
+docker run --rm -v "$(pwd)/data/osrm:/data" ghcr.io/project-osrm/osrm-backend@sha256:a7091038e39a73659767f34ef2d389909b42ea80b09bd2bdca482dce2991cbad osrm-customize /data/nyc-metro.osrm
 ```
 
 `deploy/compose.yaml`'s `osrm` service command now points at `/data/nyc-metro.osrm` by default, matching this. A later run of the clipped extract still hit the same kill at the edge expansion step whenever the rest of the app stack, api, prefetcher, kafka, and the observability containers, was up at the same time, on this same 7.7 gigabyte machine peak usage measured at 6.3 gigabytes for `osrm-extract` alone. `docker compose -f deploy/compose.yaml --profile app stop` before running the three prepare commands, then `up -d` again afterward, is what got it through cleanly.
@@ -336,7 +336,7 @@ Options built from `rentalRateOverrides` carry `"rentalSource": "USER_SUPPLIED"`
 
 The whole endpoint, cache, and aggregator layer is covered by Testcontainers backed tests that need Docker but not the compose stack up, `make test` or a plain `./mvnw test` runs them alongside every earlier phase. The four PLAN Phase 5 acceptance tests are these.
 
-The keyed singleflight, fifty concurrent identical loads collapse to exactly one upstream fetch per key, proven both at the cache unit level, in process and across two instances sharing one Redis, and end to end through HTTP against stubbed OSRM, EIA, and RapidAPI upstreams:
+The keyed singleflight, fifty concurrent identical loads collapse to exactly one upstream fetch per key, proven both at the cache unit level, in process and across two instances sharing one Redis, and end to end through HTTP against stubbed OSRM and EIA upstreams:
 
 ```
 ./mvnw test -Dtest=TwoTierCacheConcurrencyTest -Dsurefire.failIfNoSpecifiedTests=false
@@ -382,6 +382,14 @@ The build produces two boot jars from one source tree, target/truecost-0.0.1-SNA
 ```
 make prefetch
 ```
+
+The prefetcher keeps its Kafka Streams state under `./var/kafka-streams`, gitignored. Override it with `truecost.stream.state-dir` or the `TRUECOST_STREAM_STATE_DIR` environment variable. After wiping the compose volumes, remove it before starting a prefetcher by hand, otherwise it logs `TaskCorruptedException` while rebuilding from an emptied changelog:
+
+```
+rm -rf var/kafka-streams
+```
+
+In compose the state lives on a tmpfs and in Kubernetes on an emptyDir, so neither needs cleaning.
 
 Build the two images from deploy/Dockerfile, a multi stage build whose api and prefetcher targets share one compile:
 
@@ -456,7 +464,7 @@ The business metric that splits by chosen toll strategy, proven by the snapshot 
 curl -s localhost:8080/actuator/prometheus | grep truecost_strategy_chosen_total
 ```
 
-Tracing exports over OTLP to Tempo. Dev samples every trace, the default profile samples none so tests need no backend. Trace context propagates through Kafka message headers, so one trace spans the API request, the broker hop, and the prefetcher. Log lines carry the traceId and spanId, in the dev pattern as a bracketed pair and in the prod JSON as fields, so Grafana pivots from a Tempo span to its logs. The one remaining tracing step, documented in the design, is wrapping the two java.net.http outbound clients, RouteClient and ResilientHttpClient, in Micrometer Observations so the OSRM and provider calls appear as their own spans, Redis, Postgres, and Kafka already auto instrument.
+Tracing exports over OTLP to Tempo. The API reports `service.name=truecost` and the prefetcher reports `service.name=truecost-prefetcher`, so filter on either in Tempo. Dev samples every trace, the default profile samples none so tests need no backend. Trace context propagates through Kafka message headers, so one trace spans the API request, the broker hop, and the prefetcher. Log lines carry the traceId and spanId, in the dev pattern as a bracketed pair and in the prod JSON as fields, so Grafana pivots from a Tempo span to its logs. The one remaining tracing step, documented in the design, is wrapping the two java.net.http outbound clients, RouteClient and ResilientHttpClient, in Micrometer Observations so the OSRM and provider calls appear as their own spans, Redis, Postgres, and Kafka already auto instrument.
 
 Prometheus alert rules live in deploy/prometheus/alerts.yml, the p95 latency, circuit breaker open, and cache hit rate collapse alerts the phase acceptance calls for. Check them loaded:
 
@@ -537,11 +545,11 @@ Build the two jars the validation runs use:
 ./mvnw -B verify
 ```
 
-Run it with both jars stopped. `PrefetcherFlowIntegrationTest` shares the Kafka Streams state
-directory with a running prefetcher and fails to start while one is up, I-16.
+`PrefetcherFlowIntegrationTest` uses its own temporary Kafka Streams state directory, so the suite
+can run while a prefetcher is up.
 
 Validate from a clean restart. This deletes every compose volume and the prefetcher's Kafka Streams
-state, records that every store is empty, seeds from the CSVs, starts both jars, and runs every
+state under `var/kafka-streams`, records that every store is empty, seeds from the CSVs, starts both jars, and runs every
 check. Under a minute. Exit status is the number of failing checks:
 
 ```
