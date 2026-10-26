@@ -44,3 +44,43 @@ jobs:
         run: docker build --target api -t truecost-api:ci -f deploy/Dockerfile .
       - name: build prefetcher image
         run: docker build --target prefetcher -t truecost-prefetcher:ci -f deploy/Dockerfile .
+
+  publish:
+    name: publish ${{ matrix.target }} image
+    needs: build
+    # Only a push to main publishes. Pull requests and other branches stop at the build jobs above,
+    # and a failed build and test job skips this one.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [api, prefetcher]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Each image is tagged with the commit sha, which is what a deploy pins, and with main, which
+      # follows the latest merge.
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/akimdev15/truecost-${{ matrix.target }}
+          tags: |
+            type=sha,format=long,prefix=
+            type=raw,value=main
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile
+          target: ${{ matrix.target }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

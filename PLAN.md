@@ -333,6 +333,8 @@ Acceptance criteria:
 - A merge to main produces a built and pushed container image tagged with the commit sha.
 - The pipeline can deploy that image to a real or kind cluster and the deployed app answers a health check.
 
+Status: build, test, manifest validation, and image publish to ghcr.io are built in .github/workflows/ci.yml. The first two acceptance criteria are covered, the first run on main confirms the push. Deploy to a cluster is not built, the kustomize manifests still use the local image names that `make k8s-up` loads into kind.
+
 ## Risks and mitigations
 
 - Rental price APIs are the weakest link. Mitigated by the synthetic-primary design and manual golden data, the thesis never blocks on an API partnership.
