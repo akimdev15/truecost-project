@@ -293,14 +293,13 @@ This proves a success returns Present, a non 200 status and a body the caller's 
 Per connector WireMock contract tests, each covers a successful parse plus the required failure shapes, a timeout, an HTTP 429, and a malformed body, and each asserts every failure path returns `ProviderResult.Absent` with a reason string rather than throwing:
 
 ```
-./mvnw test -Dtest=RapidApiRentalProviderTest -Dsurefire.failIfNoSpecifiedTests=false
 ./mvnw test -Dtest=FuelCostServiceTest -Dsurefire.failIfNoSpecifiedTests=false
 ./mvnw test -Dtest=AmadeusHotelProviderTest -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
 `AmadeusHotelProviderTest` additionally stubs the OAuth2 client credentials token endpoint and covers a failed token exchange separately from a failed search, since `AmadeusHotelProvider` caches the access token in memory and only re-requests it once the cached token is within 60 seconds of its published expiry.
 
-Every real connector is disabled by default in `src/main/resources/application.yml`, `truecost.providers.rental.rapidapi.enabled`, `truecost.providers.fuel.eia.enabled`, and `truecost.providers.hotel.amadeus.enabled` all default to `false`, so a plain `make run` never dials out and never needs a key. Flipping one on for real also needs its API key or OAuth credentials, `RAPIDAPI_KEY`, `EIA_API_KEY`, `AMADEUS_CLIENT_ID`, and `AMADEUS_CLIENT_SECRET`, read from the environment at startup and empty by default, set them alongside the matching `enabled: true` override in an environment specific properties file or as `-D` overrides passed to `make run`. Signing up for these free keys is PLAN.md's Phase 4 open item for the user, RapidAPI, EIA, and Amadeus Self-Service.
+Every real connector is disabled by default in `src/main/resources/application.yml`, `truecost.providers.fuel.eia.enabled`, and `truecost.providers.hotel.amadeus.enabled` all default to `false`, so a plain `make run` never dials out and never needs a key. Flipping one on for real also needs its API key or OAuth credentials, `EIA_API_KEY`, `AMADEUS_CLIENT_ID`, and `AMADEUS_CLIENT_SECRET`, read from the environment at startup and empty by default, set them alongside the matching `enabled: true` override in an environment specific properties file or as `-D` overrides passed to `make run`. Signing up for these free keys is PLAN.md's Phase 4 open item for the user, EIA and Amadeus Self-Service.
 
 `FuelCostService` falls back to a static price per gallon, `truecost.providers.fuel.fallback-price-per-gallon`, whenever the EIA connector is disabled or a live fetch fails. Phase 5 moved the successful live price out of a private in memory field and behind the shared two tier cache under `fuel:v1:price:{region}` with a 24 hour logical TTL, since the underlying EIA series only updates weekly, so the one upstream fetch guarantee now holds across instances rather than only inside one JVM. `FuelEstimate.priceIsFallback()` tells the caller which path produced the number. Vehicle MPG always comes from `vehicle_class.default_mpg`, there is no per make or model lookup yet, that is a deliberately deferred `ponytail:` comment on `FuelCostService` itself, to revisit once a specific vehicle model enters the request pipeline rather than only a car class code.
 
@@ -333,7 +332,7 @@ curl -s localhost:8080/api/v1/trips/plan -H 'Content-Type: application/json' -d 
 }' | jq
 ```
 
-Options built from `rentalRateOverrides` carry `"rentalSource": "USER_SUPPLIED"` in their provenance rather than `SYNTHETIC` or `RAPIDAPI`, so a manually entered rate is never confused with a fetched one downstream.
+Options built from `rentalRateOverrides` carry `"rentalSource": "USER_SUPPLIED"` in their provenance rather than `SYNTHETIC`, so a manually entered rate is never confused with a fetched one downstream.
 
 The whole endpoint, cache, and aggregator layer is covered by Testcontainers backed tests that need Docker but not the compose stack up, `make test` or a plain `./mvnw test` runs them alongside every earlier phase. The four PLAN Phase 5 acceptance tests are these.
 

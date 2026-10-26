@@ -146,7 +146,7 @@ Kubernetes:
 There is no free official API for live rental car prices. The plan uses three tiers.
 
 1. Synthetic provider, primary for development, load testing, and demos. A deterministic pricing model seeded from `data/seeds/rental_calibration.csv`, which is built by manually collecting 30 to 50 real quotes from Kayak, Costco Travel, and company sites across companies, car classes, dates, and lead times. The model produces realistic base rates with company-specific taxes and fees. Deterministic output given a seed makes load tests and accuracy tests reproducible.
-2. One real connector behind a feature flag. RapidAPI hosts unofficial Priceline and Booking.com car rental endpoints with free tiers. Fragile and rate limited, but real. Used to demonstrate the live integration path and to collect calibration data.
+2. User supplied base rates, entered per company in the request as `rentalRateOverrides`. This is the primary input path for a real trip, and the synthetic provider only fills in options the user gave no rate for. No unofficial connector is built, since a fragile scraped source is not defensible for the accuracy claim.
 3. Documented production path, not built: Expedia Rapid and Priceline Partner Network require a partnership. The thesis mentions them as the production integration.
 
 Accuracy evaluation never depends on an API. It compares computed totals against the manually collected golden dataset in `eval/golden/`.
@@ -250,7 +250,7 @@ Acceptance criteria:
 
 ### Phase 4, data providers. Model: Sonnet, Opus signs off on the SPI shape first
 
-Build: `RentalQuoteProvider` interface with `SyntheticRentalProvider` (deterministic from calibration seed) and one real RapidAPI connector behind a config flag. `FuelCostService` using the EIA API with 24 hour cache and static fallback, MPG from the EPA service with class-default fallback. `HotelProvider` with Amadeus and a synthetic fallback. All external calls go through one shared HTTP client wrapper with a 2 second timeout, single retry, resilience4j circuit breaker per provider, and Micrometer timers.
+Build: `RentalQuoteProvider` interface with `SyntheticRentalProvider` (deterministic from calibration seed) as the fallback for any option the user supplied no base rate for. `FuelCostService` using the EIA API with 24 hour cache and static fallback, MPG from the EPA service with class-default fallback. `HotelProvider` with Amadeus and a synthetic fallback. All external calls go through one shared HTTP client wrapper with a 2 second timeout, single retry, resilience4j circuit breaker per provider, and Micrometer timers.
 
 Decisions before building: SPI method shapes and the partial-result contract (a provider failure yields an absent result with a reason, never an exception crossing the aggregation boundary).
 
@@ -342,6 +342,6 @@ Acceptance criteria:
 
 ## Open items for the user
 
-- Sign up for free keys when phase 4 starts: EIA, Amadeus Self-Service, RapidAPI, TollGuru.
+- Sign up for free keys when phase 4 starts: EIA, Amadeus Self-Service, TollGuru.
 - Confirm embedded Kafka Streams with a profile versus a separate deployable at phase 6.
 - Collect the rental calibration quotes and golden dataset, manual work only you can do, roughly two hours total.

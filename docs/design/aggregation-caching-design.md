@@ -170,7 +170,7 @@ Notes that remove ambiguity.
 - The rental key is per provider and per car class, not per company, because the SPI
   `fetchQuotes` returns a list spanning every company for one car class in one upstream call, so
   one fetch and one cache entry already covers every company, and the response breaks them out.
-  `provider` is `RentalQuoteProvider.name()`, SYNTHETIC or RAPIDAPI. `pickupDate` and `returnDate`
+  `provider` is `RentalQuoteProvider.name()`, SYNTHETIC or USER_SUPPLIED. `pickupDate` and `returnDate`
   are the local dates, since rental pricing has no time of day component, so the departure hour is
   deliberately absent from this key.
 - The fuel key is the region gas price, not a per trip fuel estimate. `eiaRegion` is the EIA
@@ -274,7 +274,7 @@ the `putIfAbsent` map yields one local leader per key, and that one leader's sin
 yields one loader call, which is one WireMock hit per provider key. Across instances the same holds
 because only the per instance leaders contend on the Redis lock. Outbound route, outbound tolls,
 return route, return tolls, rental, fuel, and hotel each have their own key, so the test asserts
-exactly one hit against each of the OSRM, RapidAPI, EIA, and Amadeus stubs.
+exactly one hit against each of the OSRM, EIA, and Amadeus stubs.
 
 ## Section 4, stale while revalidate
 
@@ -549,7 +549,7 @@ record OptionProvenance(
 )
 ```
 
-`rentalSource` is `RentalQuote.source()`, SYNTHETIC or RAPIDAPI, so a placeholder quote is never
+`rentalSource` is `RentalQuote.source()`, SYNTHETIC or USER_SUPPLIED, so a placeholder quote is never
 shown as a live price. `fuelPriceIsFallback` is `FuelEstimate.priceIsFallback()`. `hotelSource` is
 the chosen `HotelOffer.source()` or null when hotel is unavailable.
 

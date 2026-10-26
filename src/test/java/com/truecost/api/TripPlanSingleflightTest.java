@@ -39,12 +39,11 @@ import org.testcontainers.utility.DockerImageName;
 
 /**
  * The PLAN Phase 5 WireMock counted acceptance test. Fires fifty concurrent identical trip plan
- * requests at the live endpoint with the routing, fuel, and rental upstreams all stubbed, and
- * proves each upstream is called exactly the number of distinct cache keys the trip needs, never
- * once per request. That is the keyed singleflight plus cross instance Redis lock guarantee from
+ * requests at the live endpoint with the routing and fuel upstreams stubbed, and proves each
+ * upstream is called exactly the number of distinct cache keys the trip needs, never once per request. That is the keyed singleflight plus cross instance Redis lock guarantee from
  * docs/design/aggregation-caching-design.md section 3 observed end to end through HTTP, the
  * complement to TwoTierCacheConcurrencyTest which proves the same coalescing at the cache unit
- * level. OSRM is hit twice, once for each leg's route key, EIA and RapidAPI once each, rather than
+ * level. OSRM is hit twice, once for each leg's route key, and EIA once, rather than
  * fifty times apiece.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -76,9 +75,6 @@ class TripPlanSingleflightTest {
         registry.add("truecost.providers.fuel.eia.enabled", () -> "true");
         registry.add("truecost.providers.fuel.eia.base-url", () -> base + "/eia/data/");
         registry.add("truecost.providers.fuel.eia.api-key", () -> "test-key");
-        registry.add("truecost.providers.rental.rapidapi.enabled", () -> "true");
-        registry.add("truecost.providers.rental.rapidapi.base-url", () -> base + "/rapid");
-        registry.add("truecost.providers.rental.rapidapi.api-key", () -> "test-key");
         registry.add("truecost.providers.hotel.amadeus.enabled", () -> "false");
     }
 
@@ -114,9 +110,6 @@ class TripPlanSingleflightTest {
                 .withStatus(200).withHeader("Content-Type", "application/json")
                 .withFixedDelay(UPSTREAM_DELAY_MILLIS)
                 .withBody("{\"response\":{\"data\":[{\"period\":\"2026-07-14\",\"value\":\"3.40\"}]}}")));
-        upstreams.stubFor(get(urlPathMatching("/rapid/.*")).willReturn(aResponse()
-                .withStatus(200).withHeader("Content-Type", "application/json")
-                .withFixedDelay(UPSTREAM_DELAY_MILLIS).withBody("{\"results\":[]}")));
     }
 
     @Test
@@ -151,9 +144,6 @@ class TripPlanSingleflightTest {
                 .isEqualTo(2);
         assertThat(countRequests("/eia/data/.*"))
                 .as("the single fuel price key fetched once for all fifty requests")
-                .isEqualTo(1);
-        assertThat(countRequests("/rapid/.*"))
-                .as("the single rental key for this car class fetched once for all fifty requests")
                 .isEqualTo(1);
     }
 

@@ -77,7 +77,7 @@ sha() {
     echo
     echo "environment variables in the validation shell, names only. The jars' own settings are in"
     echo "process-settings.txt when the run came from scripts/clean-run.sh"
-    for v in RAPIDAPI_KEY EIA_API_KEY AMADEUS_CLIENT_ID AMADEUS_CLIENT_SECRET APICURIO_REGISTRY_URL TRUECOST_OTLP_ENDPOINT TRUECOST_EVENTS_ENABLED SPRING_PROFILES_ACTIVE; do
+    for v in EIA_API_KEY AMADEUS_CLIENT_ID AMADEUS_CLIENT_SECRET APICURIO_REGISTRY_URL TRUECOST_OTLP_ENDPOINT TRUECOST_EVENTS_ENABLED SPRING_PROFILES_ACTIVE; do
         if [[ -n "${!v:-}" ]]; then echo "  $v set"; else echo "  $v unset"; fi
     done
 } > "$OUT/environment.txt"

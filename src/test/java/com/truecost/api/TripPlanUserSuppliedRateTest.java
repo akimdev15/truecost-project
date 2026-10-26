@@ -68,7 +68,6 @@ class TripPlanUserSuppliedRateTest {
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("truecost.osrm.base-url", () -> "http://localhost:" + osrm.port());
         registry.add("truecost.providers.fuel.eia.enabled", () -> "false");
-        registry.add("truecost.providers.rental.rapidapi.enabled", () -> "false");
         registry.add("truecost.providers.hotel.amadeus.enabled", () -> "false");
     }
 
