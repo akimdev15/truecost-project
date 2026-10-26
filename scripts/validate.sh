@@ -108,8 +108,9 @@ else
 fi
 
 echo "== data =="
-check D1 "Flyway applied versions 1 and 2, both successful" \
-    test "$(psql_q "select string_agg(version||':'||success, ',' order by installed_rank) from flyway_schema_history")" = "1:true,2:true"
+expected_migrations=$(ls src/main/resources/db/migration | sed -n 's/^V\([0-9]*\)__.*/\1:true/p' | sort -n | paste -sd, -)
+check D1 "Flyway applied every migration in the repository, $expected_migrations" \
+    test "$(psql_q "select string_agg(version||':'||success, ',' order by installed_rank) from flyway_schema_history")" = "$expected_migrations"
 counts=$(psql_q "select 'crossings='||(select count(*) from toll_crossing)||' rates='||(select count(*) from toll_rate)||' programs='||(select count(*) from toll_program)||' companies='||(select count(*) from rental_company)||' classes='||(select count(*) from vehicle_class)||' schedules='||(select count(*) from congestion_schedule)||' credits='||(select count(*) from congestion_credit)")
 echo "$counts" > "$OUT/row-counts.txt"
 csv_rows() { echo $(( $(grep -cv '^\s*$' "$1") - 1 )); }

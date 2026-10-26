@@ -86,6 +86,10 @@ These are hand drawn bounding rectangles, not an imported dataset. Their union i
 
 Boston at 42.3601 north, -71.0589 east and Washington DC at 38.9072 north, -77.0369 east fall outside every box. The evaluation sweep routes R1 to R6 in scripts/strategy-sweep.sh are the accepted set the boxes were fitted to, and the routed paths could not be checked against the live OSRM graph when the boxes were drawn.
 
+## Reference snapshot, snapshot.csv
+
+One row holding the snapshot date stated at the top of this file, 2026-07-17. The API returns it as `rateSnapshot.snapshotDate` so every total names the reference data it was computed against. It is a record of when the seed was collected, not a figure taken from an outside source.
+
 ## Sources not reachable in the research window
 
 - data.ny.gov's NY Thruway toll dataset, the task's suggested source for Thruway data, was not reachable through the available search and fetch tools. The thruway.ny.gov per-mile rate figures and the Governor Mario M Cuomo Bridge figures, both independently confirmed by multiple search summaries, were used instead.
