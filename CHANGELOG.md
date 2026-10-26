@@ -7,6 +7,16 @@ Dates are the dates the work was committed, not the dates it was planned.
 
 ## [Unreleased]
 
+### Added, accuracy evaluation harness
+- `scripts/eval.py` behind `make eval`, which validates every scenario in `eval/golden/scenarios/`
+  against `eval/golden/scenario.schema.json`, refuses any complete scenario with a null reference
+  value or a value lacking a source and capture date, posts each one to the running API, and
+  writes per component error, MAPE on the true total, ranking inversions, and toll strategy
+  agreement to `eval/results/<timestamp>/`, overall and split by duration and crossing band.
+- `eval/golden/TEMPLATE.json` and `eval/golden/README.md`, the empty scenario structure and the
+  by hand collection procedure. No reference value is shipped.
+- `make eval-selftest`, which checks the scoring math on the synthetic fixture in `eval/selftest/`.
+
 ### Added, Hard Stop 3 validation
 - `scripts/validate.sh`, 42 graded checks against a running stack across the toolchain, the
   reference data, routing, API correctness, the user supplied rate path, Kafka and the schema

@@ -26,9 +26,10 @@ snapped waypoint in the response if a duration looks too small. Tracked as I-09.
 `congestion.csv`, so a trip dated 2028 or later is priced at 2025 rates. Every evaluation trip is
 in 2026. Tracked as I-15.
 
-**`make eval` is a stub.** The accuracy evaluation runner is Phase 9 and is not built, so the
-headline accuracy numbers have no evidence path yet. The target prints a pointer and exits.
-Tracked as I-02.
+**`make eval` has no scenarios to score.** The accuracy runner is built and its scoring math is
+self tested, but `eval/golden/scenarios/` is empty because the ground truth is collected by hand.
+Until scenarios are complete the target reports that nothing was scored, so the headline accuracy
+numbers still have no evidence. Tracked as I-02.
 
 **No live provider credentials are configured.** This is deliberate and not a defect. Rental base
 rates are user supplied input by design, and the fuel and hotel connectors fall back to a

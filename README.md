@@ -99,6 +99,8 @@ Grafana is on `localhost:3000`, Prometheus on `9090`. See `docs/RUNBOOK.md` for 
 make test      # unit and Testcontainers integration tests
 make smoke     # the baseline check, build plus full suite plus the live stack probe
 make clean-run # wipe every store, rebuild from the CSVs, start both jars, run every validation check
+make eval-selftest # check the accuracy scoring math on a synthetic fixture, no stack needed
+make eval      # score the complete golden scenarios against the running API
 ```
 
 The suite is self contained, it spins up its own Postgres, Redis, Kafka, and Apicurio through
@@ -148,7 +150,7 @@ Each row cites the validation check that produced the evidence, from `scripts/va
 | Fallback marking | Partial | provenance marks every fallback, freshness reports a synthetic hotel as FRESH, A15 and I-18 |
 | Metrics | Works | M1, M2 |
 | Tracing | Partial | works across the Kafka hop, breaks at the virtual thread fan-out, O2 and I-14 |
-| Accuracy against real costs | Not measured | no ground truth yet, the golden set is 0 of 20, I-02 |
+| Accuracy against real costs | Not measured | the runner is built and self tested, `make eval`, but the golden set is 0 of 20 and collection is by hand, I-02 |
 | Latency baseline | Not measured | the harness works, the real run waits on I-14, R9 |
 
 The full phase plan is in `PLAN.md`, what actually shipped is in `CHANGELOG.md`, and where they

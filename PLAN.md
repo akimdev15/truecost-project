@@ -311,6 +311,8 @@ Acceptance criteria:
 
 ### Phase 9, thesis evaluation harness. Model: Opus designs methodology, Sonnet implements
 
+Status: the accuracy runner is built (`scripts/eval.py`, `make eval`, `make eval-selftest`) with the scenario schema and template under `eval/golden/`. The golden dataset is 0 of 20 scenarios because ground truth is collected by hand, tracked in issue 2 and I-02. The strategy matrix report, the k6 cache scenarios, the report generator, and `scripts/eval.sh` are not built.
+
 Build: `eval/golden/` scenario files pairing real manually collected quotes and receipts with TrueCost inputs, an accuracy runner computing per-component and total error with MAPE, a strategy correctness runner sweeping routes by durations by tag ownership against the oracle, k6 scenarios for cold cache, warm cache, and 80/20 zipf-skewed hot routes with Prometheus snapshots captured, and a report generator writing markdown tables to `eval/results/` ready to paste into the thesis. `scripts/eval.sh` runs all three.
 
 Decisions before building: golden dataset size and collection protocol (recommendation: 20 scenarios minimum, quotes and route tolls collected the same day, snapshot date recorded per row).
