@@ -890,6 +890,33 @@ select:focus {
   font-weight: 600;
 }
 
+.badge-fallback {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.badge-inline {
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 10px;
+  vertical-align: middle;
+}
+
+.estimate-note {
+  margin-bottom: 16px;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+
+.estimate-note p {
+  margin: 0 0 4px;
+}
+
+.estimate-note-snapshot {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
 .recommendation-ticket {
   position: relative;
   display: flex;

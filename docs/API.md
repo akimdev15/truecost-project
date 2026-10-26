@@ -116,7 +116,12 @@ Abbreviated to one option. The real response carried six.
     "route": "FRESH",
     "tolls": "FRESH",
     "fuel": "UNAVAILABLE",
-    "hotel": "FRESH"
+    "hotel": "UNAVAILABLE"
+  },
+  "rateSnapshot": {
+    "snapshotDate": "2026-07-17",
+    "latestTollRateEffectiveDate": "2026-01-01",
+    "latestTollProgramEffectiveDate": "2026-07-17"
   }
 }
 ```
@@ -127,9 +132,39 @@ failure attributed to the wrong cause.
 
 `candidates` carries every strategy the engine evaluated, not only the winner, so a reader can
 check the decision rather than trust it. `partial` is true when any input came from a fallback.
-`provenance` is how a fallback stays visible instead of blending into the total. `freshness`
-tracks how old a cached value is, so it is not a reliable fallback marker. A synthetic hotel
-reads FRESH there, I-18.
+`provenance` is how a fallback stays visible instead of blending into the total.
+
+### Freshness
+
+`freshness` has one field per shared data class: `route`, `tolls`, `fuel`, and `hotel`. Each is one
+of three values.
+
+| Value | Meaning |
+| --- | --- |
+| `FRESH` | Live data served inside its time to live |
+| `STALE` | Live data served from the stale window, with a refresh already triggered |
+| `UNAVAILABLE` | No live data stands behind the value. The load failed, or the value is a synthetic or static fallback |
+
+A fallback never reads `FRESH`. Fuel on its static price reads `UNAVAILABLE`, and a hotel whose
+cheapest offer came from the synthetic provider reads `UNAVAILABLE` too, whatever its cache age.
+`SYNTHETIC` was not added as a fourth value so that fuel and hotel share one rule and a client
+needs only one check, any value other than `FRESH` or `STALE` means do not trust the figure as
+live. Read `provenance` to tell a failed load from a deliberate fallback. When the hotel is
+missing entirely, `provenance.hotelSource` is null and `hotelCents` is 0.
+
+### Rate snapshot
+
+`rateSnapshot` says which seeded reference data the totals were computed against, so an accuracy
+claim can be tied to a dated snapshot.
+
+| Field | Meaning |
+| --- | --- |
+| `snapshotDate` | When the seed was verified against its sources, read from `data/seeds/snapshot.csv` and stored in the `reference_snapshot` table |
+| `latestTollRateEffectiveDate` | The newest `effective_date` among the toll rate rows in force on the departure date for the crossings this route passes. Null when the route has no tolled crossing |
+| `latestTollProgramEffectiveDate` | The newest `effective_date` among the toll programs of the companies in the response. Null when there are no options |
+
+The totals are estimates, not quotes. The demo UI labels them that way, and an error band will be
+added once the accuracy evaluation produces one.
 
 ### Errors
 

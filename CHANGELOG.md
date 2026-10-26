@@ -24,9 +24,18 @@ Dates are the dates the work was committed, not the dates it was planned.
 - `make validate` and `make clean-run`.
 - Issues I-13 to I-18 in `docs/RISK_LOG.md`, found by the validation runs and an independent review.
 
+### Added, response transparency
+- A top level `rateSnapshot` response field with the seed snapshot date and the latest effective
+  dates of the toll rates and toll programs used. The snapshot date is seeded from
+  `data/seeds/snapshot.csv`.
+- The demo UI labels totals as estimates, shows the rate snapshot, and badges every synthetic or
+  fallback rental, hotel, and fuel value.
+
 ### Fixed
-- Documents claimed every provider fallback was flagged in the freshness block. A synthetic
-  hotel is reported FRESH, so the documents now point at the provenance block, I-18.
+- A synthetic hotel was reported FRESH in `freshness.hotel`. It now reads UNAVAILABLE, the same as
+  the fuel fallback, I-18.
+- The demo scenario buttons discarded typed Manual mode quotes. They now keep the pricing mode and
+  quotes, I-20.
 - The routing data was quoted as 9.8 GB. A full `make osrm` writes 4.7 GB.
 
 ### Removed

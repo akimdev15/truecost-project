@@ -253,6 +253,11 @@
     "route" : "FRESH",
     "tolls" : "FRESH",
     "fuel" : "UNAVAILABLE",
-    "hotel" : "FRESH"
+    "hotel" : "UNAVAILABLE"
+  },
+  "rateSnapshot" : {
+    "snapshotDate" : "2026-07-17",
+    "latestTollRateEffectiveDate" : "2026-01-01",
+    "latestTollProgramEffectiveDate" : "2026-07-17"
   }
 }

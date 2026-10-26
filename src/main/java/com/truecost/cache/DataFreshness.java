@@ -3,7 +3,8 @@ package com.truecost.cache;
 /**
  * FRESH means the value was served inside its logical TTL, STALE means it was served from the
  * stale-while-revalidate window with a background refresh already triggered. TwoTierCache itself
- * never returns UNAVAILABLE, callers use it to mark an unrecoverable load failure.
+ * never returns UNAVAILABLE, callers use it to mark an unrecoverable load failure or a value that
+ * came from a synthetic or static fallback rather than live data.
  */
 public enum DataFreshness {
     FRESH,

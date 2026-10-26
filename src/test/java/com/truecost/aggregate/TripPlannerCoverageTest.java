@@ -61,7 +61,7 @@ class TripPlannerCoverageTest {
 
         planner = new TripPlanner(cache, routeClient, mock(LegPricer.class), mock(FuelCostService.class),
                 vehicleClasses, mock(TollProgramRepository.class), List.of(), List.of(), executor,
-                eventPublisher, new SimpleMeterRegistry(), regions);
+                eventPublisher, new SimpleMeterRegistry(), regions, mock(RateSnapshotResolver.class));
     }
 
     @AfterEach
