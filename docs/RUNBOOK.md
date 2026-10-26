@@ -534,6 +534,25 @@ k9s gives a live terminal view of the namespace, pods, logs, and resource use in
 k9s -n truecost
 ```
 
+## CI/CD, Phase 10
+
+The workflow is .github/workflows/ci.yml. Every push and pull request runs `./mvnw -B verify`, renders the kustomize base, and builds both image targets without pushing. On a push to main only, and only after the build and test job passes, a publish job pushes both images to GitHub Container Registry using the built in GITHUB_TOKEN:
+
+```
+ghcr.io/akimdev15/truecost-api
+ghcr.io/akimdev15/truecost-prefetcher
+```
+
+Each image is tagged with the full commit sha and with `main`. Pull requests and other branches never publish. Check the latest runs and pull a published image from the terminal:
+
+```
+gh run list --workflow ci --limit 5
+gh run view --log-failed
+docker pull ghcr.io/akimdev15/truecost-api:main
+```
+
+The first publish creates the packages as private. Set each package visibility to public in the repository package settings if a cluster or a peer needs to pull without credentials. The kustomize manifests under deploy/k8s still reference the local names `truecost-api:latest` and `truecost-prefetcher:latest`, because `make k8s-up` builds and loads those into kind. Pointing a real cluster at ghcr is a kustomize image override and is not wired yet, so the pipeline does not deploy.
+
 ## Validation, Hard Stop 3
 
 Every command here was run for Hard Stop 3 on 11 October 2026. Evidence lands in
