@@ -48,9 +48,10 @@ jobs:
   publish:
     name: publish ${{ matrix.target }} image
     needs: build
-    # Only a push to main publishes. Pull requests and other branches stop at the build jobs above,
+    # Only a push to main of the public repository publishes, so the private mirror never competes for
+    # the same package names. Pull requests and other branches stop at the build jobs above,
     # and a failed build and test job skips this one.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'akimdev15/truecost-project'
     runs-on: ubuntu-latest
     permissions:
       contents: read
