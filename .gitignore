@@ -17,6 +17,7 @@ build/
 data/osrm/
 deploy/k8s/.kind-cache/
 eval/results/*.json
+eval/results/*/results.json
 eval/results/*.html
 !eval/results/.gitkeep
 HANDOFF.md

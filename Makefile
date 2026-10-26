@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f deploy/compose.yaml
 
-.PHONY: help up down run prefetch images test itest smoke validate clean-run sweep psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval up-all down-all logs
+.PHONY: help up down run prefetch images test itest smoke validate clean-run sweep psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval eval-selftest up-all down-all logs
 
 help:
 	@echo "truecost make targets"
@@ -31,9 +31,8 @@ help:
 	@echo "  k8s-up        create a kind cluster and deploy the API and prefetcher, from zero"
 	@echo "  k8s-loadtest  run the in cluster k6 load job to drive the API HPA"
 	@echo "  k8s-down      delete the kind cluster"
-	@echo ""
-	@echo "  not yet implemented, print a phase pointer and exit"
-	@echo "  eval"
+	@echo "  eval          score the complete golden scenarios against the running API, EVAL_BASE_URL overrides the target"
+	@echo "  eval-selftest check the scoring math on the synthetic fixture, no API needed"
 
 up:
 	$(COMPOSE) up -d
@@ -135,4 +134,7 @@ k8s-loadtest:
 	@echo "load running. watch the API scale with: kubectl -n truecost get hpa api -w"
 
 eval:
-	@echo "not yet implemented, see PLAN.md phase 9"
+	python3 scripts/eval.py
+
+eval-selftest:
+	python3 scripts/eval.py --selftest eval/selftest/selftest-fixture.json
