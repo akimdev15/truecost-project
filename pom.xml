@@ -20,6 +20,7 @@
     <java.version>21</java.version>
     <start-class>com.truecost.TrueCostApplication</start-class>
     <avro.version>1.12.1</avro.version>
+    <datasource-micrometer.version>1.2.1</datasource-micrometer.version>
     <apicurio.version>3.0.8</apicurio.version>
     <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version>
     <resilience4j.version>2.3.0</resilience4j.version>
@@ -82,6 +83,11 @@
     <dependency>
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-exporter-otlp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.ttddyy.observation</groupId>
+      <artifactId>datasource-micrometer-spring-boot</artifactId>
+      <version>${datasource-micrometer.version}</version>
     </dependency>
 
     <dependency>
