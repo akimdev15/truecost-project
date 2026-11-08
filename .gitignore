@@ -44,3 +44,7 @@ docs/sprint/
 docs/AI_USAGE_LOG.md
 docs/VALIDATION_MEMO.md
 *.zip
+
+# Assignment figures and analysis, kept local
+/hs4/
+/results09/
