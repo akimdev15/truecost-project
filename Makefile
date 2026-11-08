@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f deploy/compose.yaml
 
-.PHONY: help up down run prefetch images test itest smoke validate clean-run sweep psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval eval-selftest up-all down-all logs
+.PHONY: help up down run prefetch images test itest smoke validate clean-run sweep baseline psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval eval-selftest up-all down-all logs
 
 help:
 	@echo "truecost make targets"
@@ -19,6 +19,7 @@ help:
 	@echo "  validate      run every validation check against the running stack, evidence to docs/evidence/hs3"
 	@echo "  clean-run     tear down with volumes, rebuild state from the CSVs, start both jars, validate"
 	@echo "  sweep         price the toll strategy grid against the running API, OUT=<dir>, then recheck every fee"
+	@echo "  baseline      cold, warm, and skewed k6 latency runs plus the cold start test, OUT=<dir>"
 	@echo "  psql          open psql against the local Postgres"
 	@echo "  redis         open redis-cli against the local Redis"
 	@echo "  kafka-topics  list Kafka topics on the local broker"
@@ -72,6 +73,10 @@ validate:
 
 clean-run:
 	./scripts/clean-run.sh
+
+BASELINE_OUT ?= docs/evidence/baseline/run-$(shell date +%Y%m%d-%H%M%S)
+baseline:
+	./scripts/baseline.sh $(or $(OUT),$(BASELINE_OUT))
 
 SWEEP_OUT ?= docs/evidence/hs4/sweep-$(shell date +%Y%m%d-%H%M%S)
 sweep:
