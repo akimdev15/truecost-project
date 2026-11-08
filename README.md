@@ -150,7 +150,7 @@ Each row cites the validation check that produced the evidence, from `scripts/va
 | Fallback marking | Works | provenance and freshness both mark every fallback, and the UI badges them, A15 and I-18 |
 | Metrics | Works | M1, M2 |
 | Tracing | Partial | works across the Kafka hop, breaks at the virtual thread fan-out, O2 and I-14 |
-| Accuracy against real costs | Not measured | the runner is built and self tested, `make eval`, but the golden set is 0 of 20 and collection is by hand, I-02 |
+| Accuracy against real costs | Not measured | the runner is built and self tested, `make eval`, but the golden set is 0 of 20 complete, with 8 trips drafted and every price still to be collected by hand, I-02 |
 | Latency baseline | Not measured | the harness works, the real run waits on I-14, R9 |
 
 The full phase plan is in `PLAN.md`, what actually shipped is in `CHANGELOG.md`, and where they

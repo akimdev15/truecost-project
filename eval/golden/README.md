@@ -125,3 +125,24 @@ make eval
 `make eval-selftest` checks the scoring math on `eval/selftest/selftest-fixture.json`, which holds
 synthetic numbers and is the only place in the repository where invented values may appear. `make
 eval` needs the API running and writes `eval/results/<timestamp>/`. See `docs/RUNBOOK.md`.
+
+## Week 9 drafts
+
+`scenarios/s01` to `s08` fix eight trips for the first stage. Each departs Friday 20 November 2026
+at 6 pm Eastern and returns at 2 pm on its last day. Five of the eight are one or two day rentals.
+Every price, `crossingBand`, and source is still empty. Fill them on one capture day per scenario
+and set `status` to `complete`.
+
+| Scenario | Trip | Days | Personal tag |
+| --- | --- | --- | --- |
+| s01-phl-2d | Manhattan to Philadelphia, pickup EWR | 2 | No |
+| s02-phl-2d-tag | Manhattan to Philadelphia, pickup EWR | 2 | Yes |
+| s03-prn-1d | Manhattan to Princeton, pickup EWR | 1 | No |
+| s04-npz-2d | Manhattan to New Paltz, pickup EWR | 2 | No |
+| s05-bkn-mtk-2d | Brooklyn to Montauk, pickup BKN | 2 | No |
+| s06-stm-3d | Manhattan to Stamford, pickup EWR | 3 | No |
+| s07-mtk-3d-tag | Manhattan to Montauk, pickup EWR | 3 | Yes |
+| s08-phl-5d | Manhattan to Philadelphia, pickup EWR | 5 | No |
+
+The Philadelphia trips cross the Delaware River Turnpike Toll Bridge, which is not seeded, I-21.
+Collect its toll like any other so the evaluation measures the gap rather than hiding it.

@@ -1,0 +1,297 @@
+{
+  "id": "s06-stm-3d",
+  "status": "draft",
+  "description": "Manhattan to Stamford CT, 3 day rental, without a personal E-ZPass, pickup EWR",
+  "notes": "Week 9 draft. Trip fixed, every price still to be collected by hand on one day. Set grid.crossingBand once the crossings are counted from the tariffs.",
+  "grid": {
+    "crossingBand": null,
+    "durationBand": "3"
+  },
+  "request": {
+    "originLat": 40.7505,
+    "originLng": -73.9934,
+    "pickupLocationCode": "EWR",
+    "destLat": 41.0534,
+    "destLng": -73.5387,
+    "destinationCode": "STM",
+    "departureAt": "2026-11-20T23:00:00Z",
+    "returnAt": "2026-11-23T19:00:00Z",
+    "hasPersonalEzpass": false,
+    "carClass": "MIDSIZE",
+    "rentalRateOverrides": [
+      {
+        "companyCode": "AVIS",
+        "companyName": "Avis",
+        "totalCents": null
+      },
+      {
+        "companyCode": "BUDGET",
+        "companyName": "Budget",
+        "totalCents": null
+      },
+      {
+        "companyCode": "DOLLAR",
+        "companyName": "Dollar",
+        "totalCents": null
+      },
+      {
+        "companyCode": "ENTERPRISE",
+        "companyName": "Enterprise",
+        "totalCents": null
+      },
+      {
+        "companyCode": "HERTZ",
+        "companyName": "Hertz",
+        "totalCents": null
+      },
+      {
+        "companyCode": "THRIFTY",
+        "companyName": "Thrifty",
+        "totalCents": null
+      }
+    ]
+  },
+  "reference": {
+    "cheapestCompany": {
+      "value": null,
+      "source": null,
+      "capturedOn": null
+    },
+    "companies": {
+      "AVIS": {
+        "components": {
+          "rental": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tollProgramFee": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tolls": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "congestion": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "fuel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "hotel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          }
+        },
+        "tollStrategy": {
+          "value": null,
+          "source": null,
+          "capturedOn": null
+        }
+      },
+      "BUDGET": {
+        "components": {
+          "rental": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tollProgramFee": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tolls": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "congestion": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "fuel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "hotel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          }
+        },
+        "tollStrategy": {
+          "value": null,
+          "source": null,
+          "capturedOn": null
+        }
+      },
+      "DOLLAR": {
+        "components": {
+          "rental": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tollProgramFee": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tolls": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "congestion": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "fuel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "hotel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          }
+        },
+        "tollStrategy": {
+          "value": null,
+          "source": null,
+          "capturedOn": null
+        }
+      },
+      "ENTERPRISE": {
+        "components": {
+          "rental": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tollProgramFee": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tolls": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "congestion": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "fuel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "hotel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          }
+        },
+        "tollStrategy": {
+          "value": null,
+          "source": null,
+          "capturedOn": null
+        }
+      },
+      "HERTZ": {
+        "components": {
+          "rental": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tollProgramFee": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tolls": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "congestion": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "fuel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "hotel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          }
+        },
+        "tollStrategy": {
+          "value": null,
+          "source": null,
+          "capturedOn": null
+        }
+      },
+      "THRIFTY": {
+        "components": {
+          "rental": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tollProgramFee": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "tolls": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "congestion": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "fuel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          },
+          "hotel": {
+            "value": null,
+            "source": null,
+            "capturedOn": null
+          }
+        },
+        "tollStrategy": {
+          "value": null,
+          "source": null,
+          "capturedOn": null
+        }
+      }
+    }
+  }
+}
