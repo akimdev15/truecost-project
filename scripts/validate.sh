@@ -60,6 +60,9 @@ sha() {
     echo "  product  $( [[ -n "$(git status --porcelain -- src pom.xml deploy)" ]] && echo modified || echo unchanged ), src, pom.xml, deploy"
     echo "  harness  $( [[ -n "$(git status --porcelain -- scripts)" ]] && echo uncommitted || echo committed ), scripts"
     echo
+    echo "harness scripts, by checksum"
+    for f in scripts/*.sh scripts/*.py; do echo "  $(shasum -a 256 "$f" | cut -c1-16)  $f"; done
+    echo
     echo "artifacts"
     for jar in target/truecost-0.0.1-SNAPSHOT.jar target/truecost-0.0.1-SNAPSHOT-prefetcher.jar; do
         [[ -f "$jar" ]] && echo "  $(shasum -a 256 "$jar" | cut -c1-16)  $jar"
@@ -108,6 +111,15 @@ else
 fi
 
 echo "== data =="
+# clean-run.sh writes clean-state.txt between teardown and seeding. Reading it back as a check means a
+# restart that left any store behind fails the run instead of only being written down.
+if [[ -f "$OUT/clean-state.txt" ]]; then
+    leftover=$(awk -F'  +' '/^(postgres tables|redis keys|kafka topics|apicurio artifacts) / && $2 != "0" {print $1 "=" $2}
+        /^streams state dir / && $2 != "absent" {print $1 "=" $2}' "$OUT/clean-state.txt" | paste -sd, -)
+    check D0 "every store was empty after the teardown${leftover:+, left behind: $leftover}" test -z "$leftover"
+else
+    record D0 INFO "no clean-state.txt in this run directory, run through scripts/clean-run.sh to check the teardown"
+fi
 expected_migrations=$(ls src/main/resources/db/migration | sed -n 's/^V\([0-9]*\)__.*/\1:true/p' | sort -n | paste -sd, -)
 check D1 "Flyway applied every migration in the repository, $expected_migrations" \
     test "$(psql_q "select string_agg(version||':'||success, ',' order by installed_rank) from flyway_schema_history")" = "$expected_migrations"
@@ -142,7 +154,7 @@ check R1 "OSRM Manhattan to Philadelphia returns Ok in a plausible 6000 to 9000 
 curl -s 'localhost:5001/route/v1/driving/-73.99,40.75;-71.0589,42.3601?overview=false' > "$OUT/osrm-boston.json"
 snap_gap_km=$(jq '.waypoints[1].location as [$lng,$lat] | ((($lat - 42.3601) * 111) | fabs) | floor' "$OUT/osrm-boston.json")
 if [[ "${snap_gap_km:-0}" -gt 20 ]]; then
-    record R2 KNOWN "Boston destination snaps ${snap_gap_km} km short at the clipped map edge and still returns Ok, I-09"
+    record R2 INFO "OSRM still snaps Boston ${snap_gap_km} km short at the clipped map edge, which no longer reaches a price because FR14 rejects the trip first, see A12 and I-09"
 else
     record R2 PASS "Boston destination snapped within ${snap_gap_km} km"
 fi

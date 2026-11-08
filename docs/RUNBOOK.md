@@ -589,6 +589,12 @@ KEEP_RUNNING=true scripts/clean-run.sh
 scripts/observe-prefetch.sh docs/evidence/hs3/<the run directory it printed>
 ```
 
+Each run's `environment.txt` names the commit, whether the product and harness had uncommitted
+changes, the jar checksums, and a checksum for every script under `scripts/`, so any result can be
+traced to the exact code that produced it. In a run started by `scripts/clean-run.sh`, check D0
+reads `clean-state.txt` back and fails the run if any store, Postgres, Redis, Kafka, Apicurio, or
+the Kafka Streams state directory, was not empty after the teardown.
+
 If a run fails, read `checks.txt` in its directory first. Each line names the check, and a KNOWN
 result points at the issue in `docs/RISK_LOG.md` it reproduces. The process logs are `api.log` and
 `prefetcher.log` in the same directory, and check L1 fails the run on any ERROR line in them.
