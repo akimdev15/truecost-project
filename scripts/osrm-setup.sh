@@ -58,15 +58,28 @@ step_needed() {
 }
 
 source_pbf="$DATA_DIR/$SOURCE_NAME.osm.pbf"
-if step_needed "$source_pbf"; then
-    echo "downloading $SOURCE_URL, this is close to two gigabytes"
-    curl -L --fail -o "$source_pbf.tmp" "$SOURCE_URL"
+target_pbf="$DATA_DIR/$TARGET_NAME.osm.pbf"
+# The source is only an input to the clip. When the clipped extract is already here, from an earlier
+# run or copied in and checked against its recorded sha256, downloading 1.8 GB again buys nothing.
+if [[ "$EXTENT" == "metro" && "$FORCE" != true && -f "$target_pbf" ]]; then
+    echo "reusing existing clipped extract at $target_pbf, the source download is not needed, pass --force to redo it"
+elif step_needed "$source_pbf"; then
+    # Geofabrik redirects latest to a dated file that is replaced daily. Resuming a partial download
+    # is only safe against the same dated file, so the resolved URL is kept beside the partial and a
+    # change of day starts the download over instead of splicing two extracts together.
+    resolved_url=$(curl -sIL -o /dev/null -w '%{url_effective}' "$SOURCE_URL")
+    if [[ -f "$source_pbf.tmp" && "$(cat "$source_pbf.tmp.url" 2>/dev/null)" != "$resolved_url" ]]; then
+        rm -f "$source_pbf.tmp"
+    fi
+    echo "$resolved_url" > "$source_pbf.tmp.url"
+    echo "downloading $resolved_url, this is close to two gigabytes, rerun to resume if it stops"
+    curl -L --fail -C - -o "$source_pbf.tmp" "$resolved_url"
     mv "$source_pbf.tmp" "$source_pbf"
+    rm -f "$source_pbf.tmp.url"
 else
     echo "reusing existing source extract at $source_pbf, pass --force to redownload"
 fi
 
-target_pbf="$DATA_DIR/$TARGET_NAME.osm.pbf"
 if [[ "$EXTENT" == "metro" ]]; then
     if step_needed "$target_pbf"; then
         echo "clipping to the NYC metro bounding box $CLIP_BBOX, this keeps osrm-extract inside a laptop memory budget"

@@ -14,9 +14,14 @@ programs = {}
 for p in csv.DictReader(open("data/seeds/toll_programs.csv")):
     programs[(p["company_code"], p["program_name"])] = p
 
-checked = failed = 0
+checked = failed = rejected = 0
 for line in open(sys.argv[1]):
     entry = json.loads(line)
+    # A trip outside seeded coverage is refused with an error body and no options, so it has no
+    # fees to recheck. It is counted rather than skipped silently.
+    if "options" not in entry["response"]:
+        rejected += 1
+        continue
     days = entry["response"]["context"]["rentalDays"]
     for option in entry["response"]["options"]:
         for c in option["strategy"]["candidates"]:
@@ -42,4 +47,4 @@ for line in open(sys.argv[1]):
                 failed += 1
                 print(entry["route"], entry["days"], entry["tag"], option["companyCode"], c["strategy"], ", ".join(problems))
 
-print(f"candidates rechecked from the seed file {checked}, mismatches {failed}")
+print(f"candidates rechecked from the seed file {checked}, mismatches {failed}, rejected trips skipped {rejected}")

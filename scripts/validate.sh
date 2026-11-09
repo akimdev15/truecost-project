@@ -103,11 +103,13 @@ check T6 "seed CSVs readable and OSRM graph files present" \
 check T7 "API health UP with Postgres and Redis UP" \
     bash -c "curl -s $API/actuator/health | jq -e '.status==\"UP\" and .components.db.status==\"UP\" and .components.redis.status==\"UP\"'"
 check T8 "prefetcher health UP" bash -c "curl -s localhost:8082/actuator/health | jq -e '.status==\"UP\"'"
-free_pct=$(df . | tail -1 | awk '{print 100 - $5}')
-if [[ "$free_pct" -lt 5 ]]; then
-    record T9 KNOWN "host disk ${free_pct}% free, little headroom for re-preparing the map, I-13"
+# Absolute space rather than a percentage, because re-preparing the map needs about 8 GB whatever
+# the disk size. 15 GB is the margin set at the midpoint.
+free_gb=$(df -k . | tail -1 | awk '{print int($4 / 1048576)}')
+if [[ "$free_gb" -lt 15 ]]; then
+    record T9 KNOWN "host disk ${free_gb} GB free, under the 15 GB needed to re-prepare the map safely, I-13"
 else
-    record T9 PASS "host disk ${free_pct}% free"
+    record T9 PASS "host disk ${free_gb} GB free"
 fi
 
 echo "== data =="
