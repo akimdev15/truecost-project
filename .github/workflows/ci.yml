@@ -23,6 +23,16 @@ jobs:
       - name: verify
         run: ./mvnw -B verify
 
+  docs:
+    name: audit documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # A setup guide that points at a missing file or make target fails a new reader on the first
+      # step, so the docs are checked against the tree on every push like the code is.
+      - name: audit docs against the repository
+        run: python3 scripts/audit-docs.py
+
   manifests:
     name: validate kubernetes manifests
     runs-on: ubuntu-latest

@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f deploy/compose.yaml
 
-.PHONY: help up down run prefetch images test itest smoke validate clean-run sweep baseline psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval eval-selftest up-all down-all logs
+.PHONY: help up down run prefetch images test itest smoke validate clean-run sweep baseline audit psql redis kafka-topics seed osrm k6-smoke demo-load demo-reset demo-check k8s-up k8s-down eval eval-selftest up-all down-all logs
 
 help:
 	@echo "truecost make targets"
@@ -20,6 +20,7 @@ help:
 	@echo "  clean-run     tear down with volumes, rebuild state from the CSVs, start both jars, validate"
 	@echo "  sweep         price the toll strategy grid against the running API, OUT=<dir>, then recheck every fee"
 	@echo "  baseline      cold, warm, and skewed k6 latency runs plus the cold start test, OUT=<dir>"
+	@echo "  audit         check that every doc link, make target, script, and config variable resolves"
 	@echo "  psql          open psql against the local Postgres"
 	@echo "  redis         open redis-cli against the local Redis"
 	@echo "  kafka-topics  list Kafka topics on the local broker"
@@ -73,6 +74,9 @@ validate:
 
 clean-run:
 	./scripts/clean-run.sh
+
+audit:
+	python3 scripts/audit-docs.py
 
 BASELINE_OUT ?= docs/evidence/baseline/run-$(shell date +%Y%m%d-%H%M%S)
 baseline:
