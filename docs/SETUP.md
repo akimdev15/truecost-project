@@ -39,19 +39,23 @@ cd truecost-project
 ```
 
 That is the whole thing. `verify` compiles both deployables, generates the Avro classes, runs all
-119 tests, and repackages the two boot jars. The integration tests start their own Postgres, Redis,
+114 tests, and repackages the two boot jars. The integration tests start their own Postgres, Redis,
 Kafka, and Apicurio through Testcontainers and stub every outbound HTTP provider with WireMock, so
 nothing external is required and no credentials are involved.
 
 Expected ending:
 
 ```
-[INFO] Tests run: 89, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 114, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
 
 The first run is slower because Maven downloads dependencies and Docker pulls the Testcontainers
-images. A warm run finishes in under a minute.
+images. On 8 November 2026, from an empty Maven cache on a slow connection,
+the first attempt downloaded 849 artifacts in 14 minutes and then stalled when the connection
+dropped. Rerun on the same cache once it recovered, it fetched the last 88 and finished in 58
+seconds. The finished cache is about 274 MB.
+A warm run finishes in under a minute.
 
 ## Level 2, run the whole system
 
@@ -65,7 +69,9 @@ This is the long step and the only one worth reading about before you start it. 
 Geofabrik us-northeast OpenStreetMap extract, close to 2 GB, clips it to a New York metro bounding
 box, and then runs the three stage OSRM pipeline, `osrm-extract`, `osrm-partition`, and
 `osrm-customize`. It is safe to rerun, every stage is skipped if its output already exists, and
-`--force` redoes everything.
+`--force` redoes everything. An interrupted download resumes on the next run, as long as Geofabrik
+has not replaced its daily file in between. If it has, the download starts over rather than mixing
+two days' extracts.
 
 Two things to know.
 
@@ -155,9 +161,8 @@ checks, and a check that reproduces a documented issue is reported as KNOWN rath
 
 The teardown does not touch the prepared OSRM graph, which is a bind mount and survives on
 purpose. The run checksums both the clipped extract and the prepared graph instead. The
-prefetcher's Kafka Streams state lives in the OS temp directory, outside every volume, so the
-script deletes it explicitly. Before it did, hot route counts carried from one run into the
-next, I-16.
+prefetcher's Kafka Streams state lives in `./var/kafka-streams`, outside every volume, so the
+script deletes it explicitly, and check D0 fails the run if it or any store survived the teardown.
 
 To watch the hot route prefetch happen live, which takes about five minutes because a signal is
 only emitted once its window closes:
@@ -184,7 +189,9 @@ scripts/observe-prefetch.sh docs/evidence/hs3/<the run directory it printed>
 
 ## Credentials and external services
 
-There are none to configure. This is a deliberate scope decision rather than an omission.
+There are none to configure. The optional keys are listed in `.env.example`. Nothing loads that file
+automatically, so after `cp .env.example .env` and filling it in, export it in the shell that runs
+the API, `set -a && . ./.env && set +a`, then `make run`. `.env` is ignored by git. This is a deliberate scope decision rather than an omission.
 
 - Rental base rates are user supplied input, because no free licensed rental pricing API exists and
   the alternatives were an unofficial connector or scraping, neither defensible for a thesis
@@ -206,6 +213,11 @@ make down-all     # stops everything and removes volumes
 `make down` stops the stack but keeps the Postgres volume, which is what you want between runs.
 
 ## If something fails
+
+The README has a troubleshooting table for the common cases. The two that cost the most time in
+practice are a process already holding port 3000, which keeps Grafana down and fails validation
+check T3, and Docker running short of memory during `make osrm`, which kills `osrm-extract` with no
+message.
 
 `docs/RUNBOOK.md` has a section per subsystem with the commands to inspect and debug each one.
 `docs/KNOWN_ISSUES.md` lists what is currently broken or limited, with the workaround for each.

@@ -1,172 +1,217 @@
 # TrueCost
 
-A real time, all in cost planner for weekend car rental trips out of New York City. A user enters
-an origin, a destination, travel dates, whether they own a personal E-ZPass, and the base rate each
-rental company quoted them. TrueCost computes the true total per option including that base rate,
-toll program fees, congestion pricing, route tolls, fuel, and hotel, ranks every option, and
-recommends the cheapest.
+TrueCost works out the real cost of a weekend car rental trip out of New York City. You enter an
+origin, a destination, travel dates, whether you own a personal E-ZPass, and the base rate each
+rental company quoted you. TrueCost adds the toll program fee, route tolls, congestion pricing,
+fuel, and hotel to each quote, ranks every option by its true total, and recommends the cheapest.
 
-Base rates are user supplied because no free licensed rental pricing API exists, and the available
-alternatives were an unofficial third party connector or scraping, neither of which is defensible
-for a thesis accuracy claim. Every other input, route tolls, congestion pricing, toll program terms,
-fuel, and hotel, is fetched or computed by the system from a real source.
+The core engineering problem is the toll decision. For every rental company it prices your own
+E-ZPass, the company's per crossing plan, and the company's unlimited plan for the exact route and
+rental length, and picks the cheapest. Every candidate it priced is returned, so the choice can be
+checked rather than trusted. This is a master's applied project evaluated on the accuracy of the
+totals, response time under parallel fetching with caching, and the correctness of the toll
+decision.
 
-The core engineering problem is deciding, per rental option, whether the user's own E-ZPass, the
-rental company's per crossing fee, or the company's unlimited toll plan is cheapest for the specific
-route and rental duration. This is a master's applied project, evaluated on the accuracy of the
-computed totals, response time under parallel fetching with caching, and the correctness of the toll
-strategy recommendation across varied routes and trip lengths.
+## Quick start
 
-## Architecture
-
-TrueCost is a Spring Boot application that deploys as two independently scaled processes talking only
-through Kafka.
-
-- The API values a trip synchronously. It fans out on virtual threads through a two tier cache,
-  Caffeine in process and Redis across instances, with a keyed singleflight and stale while
-  revalidate, prices both trip legs, runs the toll strategy engine per option, and ranks the
-  results.
-- The prefetcher is a Kafka Streams worker. It counts search events in a hopping window, detects
-  hot routes, and warms the caches ahead of the next user, and it sinks every fetched rental quote
-  into Postgres for the accuracy analysis.
+| Level | What it proves | Needs | Time |
+| --- | --- | --- | --- |
+| 1 | The code builds and all 114 tests pass | JDK 21, Docker running | about 2 minutes warm, 10 or more on a first run |
+| 2 | The whole system runs and plans a real trip | Level 1 plus about 8 GB of Docker memory and 8 GB of disk for the map | about an hour the first time, almost all of it the map download |
+| 3 | A clean restart passes every validation check | Level 2 plus curl, jq, nc, shasum | about 2 minutes |
 
 ```
-com.truecost
-  api            the POST /api/v1/trips/plan endpoint, api.dto holds the request and response records
-  aggregate      TripPlanner, the fan-out orchestrator, and the leg combination
-  cache          the two tier cache, singleflight, Redis lock, and geohash keying
-  toll           crossing detection, timeline pricing, and toll.strategy, the strategy engine
-  route          the OSRM routing client
-  provider       the rental, fuel, and hotel connectors and the shared resilient HTTP transport
-  persist        the JDBC repositories
-  events         the Avro events and the API side publisher
-  stream         the prefetcher, stream.topology, stream.consumer, and stream.config
+git clone https://github.com/akimdev15/truecost-project.git
+cd truecost-project
+./mvnw -B verify          # Level 1
+make osrm                 # Level 2, one time, downloads and prepares the routing map
+make up && make seed      # Level 2, infrastructure in containers and the reference data
+make run                  # Level 2, the API on 8080, leave it running
+make prefetch             # Level 2, in a second terminal, the prefetcher on 8082
+make demo-check           # Level 2, confirms the API, the map, and a real plan request
+make clean-run            # Level 3, stop make run and make prefetch first
 ```
 
-The design decisions behind each phase live in `docs/design`, and `docs/RUNBOOK.md` catalogs every
-command to run, inspect, and debug the stack.
+`docs/SETUP.md` walks through each level in detail, with what each step costs and what to do when it
+fails. `make up-all` runs the API and prefetcher in containers instead of on the host, but its first
+build resolves every Maven dependency inside Docker and takes half an hour or more.
 
-## Tech stack
+## Prerequisites
 
-Java 21 on Spring Boot 3, Kafka with Kafka Streams, Avro with a self hosted Apicurio Registry,
-PostgreSQL, Redis, a self hosted OSRM routing engine, Flyway migrations, Prometheus, Grafana, and
-Tempo for metrics and tracing, Docker Compose for local development, Kubernetes for deployment
-practice, and k6 for load testing. The build is Maven, the single command surface is `make`.
+| Tool | Version tested | Notes |
+| --- | --- | --- |
+| JDK | 21, Corretto 21.0.11 | 21 is required. The code uses virtual threads |
+| Docker | Docker Desktop, engine 29.8.0 | The daemon must be running for every level, Testcontainers starts real containers |
+| Maven | 3.9.9 through `./mvnw` | Not installed separately, the wrapper downloads it |
+| make, git, curl, jq | any recent | jq is needed for Level 3 and for reading responses |
+| nc, shasum | preinstalled on macOS | Level 3 only |
+| k6 | v2.3.0 | Optional, only for `make k6-smoke` and `make baseline` |
 
-## Running it
+Hardware the project was built and measured on. Apple M3 Pro, 18 GB RAM, macOS 26.5.1, with Docker
+Desktop allowed 7.65 GB. CI runs Level 1 on GitHub's `ubuntu-latest` runners on every push.
 
-The fastest proof the project works needs only a JDK 21 and a running Docker daemon, and takes
-about a minute warm:
+- Docker memory. Level 1 needs about 4 GB. Level 2 needs about 8 GB, because `osrm-extract` peaked
+  at 6.3 GB on the clipped map. Docker Desktop sets this under Settings, Resources, Memory.
+- Disk. The prepared map is about 4.7 GB, and `osrm-extract` needs temporary space on top. Leave
+  at least 8 GB free before `make osrm`. The container images add about 3 GB.
+- Level 3 has only been run on macOS. `scripts/validate.sh` reads `sw_vers` and `sysctl`, and
+  `scripts/observe-prefetch.sh` uses BSD `date -r`.
 
-```
-./mvnw -B verify   # builds both deployables and runs all 119 tests against real containers
-```
+## Expected output
 
-The tests start their own Postgres, Redis, Kafka, and Apicurio through Testcontainers and stub the
-outbound providers with WireMock, so no stack and no credentials are needed.
-
-To run the whole system:
-
-```
-make osrm        # one time, download and prepare the OSRM routing data, this is the long step
-make up-all      # build the images and start everything, infra plus seed, API, and prefetcher
-make demo-check  # confirm the API, OSRM, and a real plan request are all healthy
-```
-
-The first `make up-all` is slow, budget half an hour, because the Dockerfile resolves the whole
-dependency tree inside the build container.
-
-`docs/SETUP.md` is the full clean clone walkthrough, including what `make osrm` costs and what to
-do when it runs out of memory. To run the two processes on the host against a containerized
-infrastructure instead, use `make up`, then `make seed`, `make run`, and `make prefetch`.
-
-Then a plan request:
+Level 1 ends with:
 
 ```
-curl -s localhost:8080/api/v1/trips/plan -H 'Content-Type: application/json' -d '{
-  "originLat": 40.7505, "originLng": -73.9934, "pickupLocationCode": "EWR",
-  "destLat": 39.95, "destLng": -75.16, "destinationCode": "PHL",
-  "departureAt": "2026-08-14T22:00:00Z", "returnAt": "2026-08-16T18:00:00Z",
-  "hasPersonalEzpass": false, "carClass": "MIDSIZE"
-}' | jq
+[INFO] Tests run: 114, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
 ```
 
-Grafana is on `localhost:3000`, Prometheus on `9090`. See `docs/RUNBOOK.md` for the full command set.
-
-## Testing
+`make demo-check` prints:
 
 ```
-make test      # unit and Testcontainers integration tests
-make smoke     # the baseline check, build plus full suite plus the live stack probe
-make clean-run # wipe every store, rebuild from the CSVs, start both jars, run every validation check
-make eval-selftest # check the accuracy scoring math on a synthetic fixture, no stack needed
-make eval      # score the complete golden scenarios against the running API
+api    UP
+osrm   UP
+plan   HTTP 200
 ```
 
-The suite is self contained, it spins up its own Postgres, Redis, Kafka, and Apicurio through
-Testcontainers and stubs the external HTTP providers with WireMock, so it needs Docker but not the
-compose stack. 119 tests across 30 classes. The acceptance tests pin the toll strategy engine
-against an independent oracle, pin a golden trip response, prove the singleflight and stale while
-revalidate guarantees, and prove the prefetcher warms the cache with no user request.
+A plan request for the sample trip returns six options ranked by `trueTotalCents`, each with its
+cost breakdown, the chosen toll strategy and every candidate it beat, and a `provenance` block
+saying which inputs were synthetic or fallback values:
 
-One caveat worth knowing before you trust the property test. `StrategyOracle` is written
-independently of the engine except for the `NO_ARRANGEMENT` gate, which it copies, so the 10,000
-case agreement shows the engine matches its specification rather than that the specification is
-right. Tracked in `docs/KNOWN_ISSUES.md`.
+```
+curl -s localhost:8080/api/v1/trips/plan -H 'Content-Type: application/json' \
+  -d @eval/golden/sample-request.json | jq '.recommendation.summary'
+```
 
-Captured run output is not shipped in the repository. `make smoke` prints the build, test, and
-live stack result, and `make clean-run` writes a full validation run under `docs/evidence/hs3/`,
-which is ignored by git, so the evidence is reproduced on your machine.
+A trip outside the seeded toll coverage is refused rather than priced:
+
+```
+HTTP 422
+{"error": "The destination is at (42.3601, -71.0589), which is outside the area where tolls can be priced, so no total is returned.", "code": "OUT_OF_COVERAGE"}
+```
+
+`make clean-run` ends with `clean run finished with 0 failing checks` and writes its evidence to
+`docs/evidence/hs3/<label>-<timestamp>/`. The `summary.txt` there reads `fails: 0 known: 0 pass:
+42`, or `known: 1 pass: 41` when the disk has less than 15 GB free, which check T9 reports as a
+known issue rather than a failure.
+
+The demo UI is at `http://localhost:8080/`, Grafana at `localhost:3000`, Prometheus at `9090`.
+
+## Configuration and credentials
+
+Nothing needs a key. Every external input has a documented fallback, and the response marks each
+fallback in `provenance`, so a fallback is never shown as a live price.
+
+| Input | Default | To use the live source |
+| --- | --- | --- |
+| Rental base rates | Entered by the user in `rentalRateOverrides`, otherwise a synthetic estimate | There is no rental API by design. No free licensed rental pricing API exists |
+| Fuel price | Fixed fallback of 3.50 a gallon | A free EIA key in `EIA_API_KEY` and `TRUECOST_PROVIDERS_FUEL_EIA_ENABLED=true` |
+| Hotel price | Synthetic estimate | Amadeus test environment credentials in `AMADEUS_CLIENT_ID` and `AMADEUS_CLIENT_SECRET`, plus its enabled flag |
+| Routing | Self hosted OSRM on `localhost:5001` | Already live once `make osrm` has run |
+
+Every variable is listed in `.env.example` with its default and what happens when it is unset.
+Copy it to `.env`, which git ignores, and export it into the shell before starting the API, because
+nothing loads it automatically:
+
+```
+cp .env.example .env
+set -a && . ./.env && set +a
+make run
+```
+
+The EIA API is free with a key and returns a weekly price. The Amadeus test environment is free but
+returns limited test data, not production hotel prices.
+
+## Data
+
+| Data | Where it comes from | In the repository |
+| --- | --- | --- |
+| Road network | OpenStreetMap, the Geofabrik `us-northeast` extract, clipped to a New York metro box by `make osrm` | No. About 4.7 GB prepared, and rebuilt from the source on each machine |
+| Toll rates, crossings, congestion pricing | Published agency tariffs, PANYNJ, MTA, NJTA, NYSTA, and the PA Turnpike, dated in `data/seeds/SOURCES.md` | Yes, `data/seeds/*.csv` |
+| Rental toll program terms | Each company's published terms, dated in `SOURCES.md` | Yes, `data/seeds/toll_programs.csv` |
+| Coverage area | Rectangles where every tolled facility is seeded | Yes, `data/seeds/coverage_regions.csv` |
+| Synthetic rental calibration | Provisional placeholder figures, not real rates, used only when no quote is entered so tests stay deterministic | Yes, `data/seeds/rental_calibration.csv` |
+| Golden accuracy scenarios | Collected by hand, one capture day per scenario | Drafts only, `eval/golden/scenarios/`, every price still empty |
+
+The map is OpenStreetMap data, copyright OpenStreetMap contributors, available under the Open
+Database License. It is not committed because of its size, and anything derived from it must keep
+that attribution. Geofabrik replaces its extract every day, so two machines can build slightly
+different maps. `make osrm` prints the sha256 of the extract it used, and every validation run
+records it, so a result can be matched to its map. Live rental and hotel quotes collected for the
+golden set are personal quotes under each provider's terms. Only the numbers and their sources are
+kept, never the pages themselves.
+
+## Testing and validation
+
+```
+make test            # unit and Testcontainers integration tests
+make clean-run       # wipe every store, reseed, start both jars, run all 42 validation checks
+make validate        # the same checks against a stack that is already running
+make sweep           # price 84 trips through the API and recheck every fee from the seed file
+make eval-selftest   # check the accuracy scoring math, no stack needed
+make eval            # score the complete golden scenarios against the running API
+make baseline        # cold, warm, and skewed latency runs and the cold start test
+make audit           # check every doc link, make target, script, and config variable resolves
+```
+
+The tests start their own Postgres, Redis, Kafka, and Apicurio and stub every outbound provider
+with WireMock, so they need Docker but not the compose stack. The acceptance tests pin the toll
+strategy engine against an independent oracle, pin a golden trip response, and prove the cache
+singleflight and the prefetcher. One caveat. `StrategyOracle` copies the engine's `NO_ARRANGEMENT`
+rule, so that part of the agreement is not independent, I-03.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Tests fail with `Could not find a valid Docker environment` | Docker is not running | Start Docker Desktop and wait for `docker info` to succeed |
+| `make osrm` stops with no error message | `osrm-extract` ran out of Docker memory | Raise Docker memory to 8 GB, stop other containers, rerun `make osrm`, it resumes |
+| `make osrm` takes hours | The 1.8 GB Geofabrik download is slow | Leave it running. If it stops, rerun `make osrm` and it resumes the same day's file |
+| Grafana will not start, or validation check T3 fails | Something else holds port 3000 | Stop that process, then `docker compose -f deploy/compose.yaml up -d grafana` |
+| OSRM fails to bind | Port 5000 is taken by macOS AirPlay | Already avoided, OSRM uses 5001. Check nothing else holds 5001 |
+| A plan returns 422 `OUT_OF_COVERAGE` | The trip leaves the area whose tolls are seeded | Expected. Boston and Washington DC are outside it |
+| A key in `.env` has no effect | Nothing loads `.env` | `set -a && . ./.env && set +a` in the shell that runs `make run` |
+| The first `make up-all` takes half an hour | Maven resolves every dependency inside the image build | Use `make up`, `make seed`, `make run`, and `make prefetch` instead |
+| `make clean-run` fails check D0 | A store was not empty after the teardown | Read `clean-state.txt` in the run directory. It names what survived |
+
+`docs/RUNBOOK.md` has the commands to inspect and debug every subsystem, and
+`docs/KNOWN_ISSUES.md` lists what is limited today, with workarounds.
 
 ## Status
 
-Baseline `v0.1.0-baseline`, tagged 4 October 2026. Validated at Hard Stop 3, 11 October 2026.
-
-Phases 0 through 8 are built, the domain and reference data, routing and toll detection, the toll
-strategy engine, the data providers, the aggregation API and cache, the Kafka Streams prefetcher,
-observability, and the Kubernetes packaging. CI runs the full suite, a kustomize render, and both
-image builds on every push.
-
-### What works and what is partial
-
-Each row cites the validation check that produced the evidence, from `scripts/validate.sh`.
-`make clean-run` reproduces every row from a clean restart.
+Phases 0 to 8 are built, plus out of bounds rejection, the accuracy runner, and image publishing
+from CI. Each row cites the validation check behind it, from `scripts/validate.sh`.
 
 | Area | State | Evidence |
 | --- | --- | --- |
-| Build and test suite | Works | 119 tests across 30 classes, no failures on 25 October |
-| Clean restart from the CSVs | Works | `scripts/clean-run.sh`, nine runs, fully clean from run 6, I-16 |
-| Reference data load | Works | D1 to D9, every table matches its CSV row count |
-| Routing inside the metro box | Works | R1 |
-| Routing outside it | Partial | R2, snaps to the map edge and still returns Ok, I-09 |
-| Cost arithmetic and ranking | Works | A2 to A7 hold on every option in every run |
-| User supplied base rates | Works | A13 and A14, exercised live from run 6 |
-| Toll strategy gating on tag ownership | Works | A8 |
-| Determinism | Works | A9, and the golden response hashes identically across runs |
-| Input validation | Works | A10, an empty request returns 400 with the missing fields named |
-| Out of bounds rejection, FR14 | Works | A12, 422 OUT_OF_COVERAGE, residual gap I-21 |
-| Kafka publish and schema registry | Works | K1 to K3 |
-| Hot route prefetch | Works | observed live in four runs with `scripts/observe-prefetch.sh` |
-| Fallback marking | Works | provenance and freshness both mark every fallback, and the UI badges them, A15 and I-18 |
-| Metrics | Works | M1, M2 |
-| Tracing | Partial | works across the Kafka hop, breaks at the virtual thread fan-out, O2 and I-14 |
-| Accuracy against real costs | Not measured | the runner is built and self tested, `make eval`, but the golden set is 0 of 20 complete, with 8 trips drafted and every price still to be collected by hand, I-02 |
-| Latency baseline | Not measured | the harness works, the real run waits on I-14, R9 |
+| Build and test suite | Works | 114 tests across 29 classes, Linux CI and macOS |
+| Clean restart from the CSVs | Works | `make clean-run`, check D0 fails the run if any store survives the teardown |
+| Reference data load | Works | D1 to D9, every table matches its CSV |
+| Cost arithmetic, ranking, and determinism | Works | A1 to A9 |
+| User supplied base rates | Works | A13 and A14 |
+| Input validation | Works | A10, an empty request returns 400 naming every missing field |
+| Out of bounds rejection | Works | A12, 422 OUT_OF_COVERAGE |
+| Fallback marking | Works | A15, provenance, freshness, and UI badges agree |
+| Kafka publish, schema registry, and hot route prefetch | Works | K1 to K4, and `scripts/observe-prefetch.sh` |
+| Metrics and tracing | Works | M1, M2, O1, O2 |
+| Accuracy against real costs | Not measured | the runner works, the golden set has 0 of 20 complete scenarios, I-02 |
+| Latency under load | Not measured | `make baseline` is built, no run recorded yet, R9 |
 
-The full phase plan is in `PLAN.md`, what actually shipped is in `CHANGELOG.md`, and where they
-disagree the changelog is right.
+`PLAN.md` is the phase plan, `CHANGELOG.md` is what shipped, and where they disagree the changelog
+is right.
 
-## Engineering documentation
+## Documentation
 
 | Document | What it is for |
 | --- | --- |
-| `docs/SETUP.md` | clean clone setup, prerequisites, and the two levels of running it |
-| `.env.example` | every environment variable, what it defaults to, and what happens unset |
-| `docs/ARCHITECTURE.md` | how the repository maps to the architecture, package by package |
-| `docs/API.md` | the endpoint contract with real payloads, and the documented stub behaviour |
-| `docs/RUNBOOK.md` | per subsystem commands to run, inspect, and debug |
-| `docs/ENGINEERING.md` | layout, naming, branch strategy, and artifact storage conventions |
-| `docs/RISK_LOG.md` | the risk and issue register with severity, owner, and status |
-| `docs/KNOWN_ISSUES.md` | what is currently broken or limited, with workarounds |
+| `docs/SETUP.md` | clean clone setup, level by level |
+| `.env.example` | every environment variable, its default, and what happens unset |
+| `docs/ARCHITECTURE.md` | how the code maps to the architecture, package by package |
+| `docs/API.md` | the endpoint contract with real payloads, and the fallback behaviour |
+| `docs/RUNBOOK.md` | commands to run, inspect, and debug each subsystem |
+| `docs/ENGINEERING.md` | layout, naming, branch strategy, and where artifacts live |
+| `docs/RISK_LOG.md` | risks and issues with severity, owner, and status |
+| `docs/KNOWN_ISSUES.md` | what is limited today, with workarounds |
+| `data/seeds/SOURCES.md` | where every reference data number came from, and when |
 | `CHANGELOG.md` | what shipped and when |
-| `docs/design/` | one design record per phase, written before the phase was built |
+| `docs/design/` | one design record per phase, written before it was built |

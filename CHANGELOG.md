@@ -7,6 +7,24 @@ Dates are the dates the work was committed, not the dates it was planned.
 
 ## [Unreleased]
 
+### Hardening and reproducibility, 8 November 2026
+- README rewritten around a three level quick start, with prerequisites, tested hardware, expected
+  output, configuration and credentials, data sources and redistribution, and troubleshooting.
+- `scripts/audit-docs.py`, `make audit`, and a CI job that fail when a doc names a link, make
+  target, script, or configuration variable the repository does not have.
+- `.env` is ignored by git, and `.env.example` says how to load it, since nothing loads it.
+- `make osrm` resumes an interrupted map download against the same dated Geofabrik file, and skips
+  the 1.8 GB source download when the clipped extract is already present.
+- Validation check T9 measures free disk in gigabytes against the 15 GB the map needs, not a
+  percentage.
+- `scripts/sweep-recheck.py` counts trips refused with 422 instead of failing on them.
+- The test count in the docs is 114 across 29 classes. Earlier figures of 119 and 30 counted a
+  stale report left in `target` by the deleted RapidAPI test.
+
+### Fixed, Delaware River Bridge, I-21
+- `DRBRIDGE` seeded from the PA Turnpike 2026 schedule, westbound only, with migration
+  `V5__pennsylvania_turnpike_agency.sql` adding the agency.
+
 ### Added, FR14 coverage rejection
 - `data/seeds/coverage_regions.csv`, migration `V3__coverage_regions.sql`, and the `coverage_region`
   table. A trip whose origin, destination, or routed path leaves these rectangles now returns 422

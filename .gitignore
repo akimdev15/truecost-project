@@ -48,3 +48,7 @@ docs/VALIDATION_MEMO.md
 # Assignment figures and analysis, kept local
 /hs4/
 /results09/
+
+# Local secrets, copied from .env.example and never committed
+.env
+/hs5/
