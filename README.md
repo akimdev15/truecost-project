@@ -59,7 +59,7 @@ build resolves every Maven dependency inside Docker and takes half an hour or mo
 | Docker | Docker Desktop, engine 29.8.0 | The daemon must be running for every level, Testcontainers starts real containers |
 | Maven | 3.9.9 through `./mvnw` | Not installed separately, the wrapper downloads it |
 | make, git, curl, jq | any recent | jq is needed for Level 3 and for reading responses |
-| nc, shasum | preinstalled on macOS | Level 3 only |
+| nc, shasum | preinstalled on macOS and on Ubuntu runners | Level 3 only |
 | k6 | v2.3.0 | Optional, only for `make k6-smoke` and `make baseline` |
 
 Hardware the project was built and measured on. Apple M3 Pro, 18 GB RAM, macOS 26.5.1, with Docker
@@ -69,8 +69,10 @@ Desktop allowed 7.65 GB. CI runs Level 1 on GitHub's `ubuntu-latest` runners on 
   at 6.3 GB on the clipped map. Docker Desktop sets this under Settings, Resources, Memory.
 - Disk. The prepared map is about 4.7 GB, and `osrm-extract` needs temporary space on top. Leave
   at least 8 GB free before `make osrm`. The container images add about 3 GB.
-- Level 3 has only been run on macOS. `scripts/validate.sh` reads `sw_vers` and `sysctl`, and
-  `scripts/observe-prefetch.sh` uses BSD `date -r`.
+- Level 3 runs on macOS and Linux. On 15 November 2026 it passed 42 of 42 on macOS 26.5.1 arm64 and on
+  Ubuntu 26.04.1 x86_64 in the `level3-linux` workflow, each from a map built from source. Host facts
+  come from `scripts/host-info.sh`, which branches by platform. The prepared graph files differ in
+  bytes between the two, the trip results do not, the golden response hashed the same on both.
 
 ## Expected output
 
@@ -201,6 +203,7 @@ from CI. Each row cites the validation check behind it, from `scripts/validate.s
 | Area | State | Evidence |
 | --- | --- | --- |
 | Build and test suite | Works | 114 tests across 29 classes, Linux CI and macOS |
+| Clean restart on Linux | Works | `level3-linux` workflow, map from source then 42 of 42, 15 November |
 | Clean restart from the CSVs | Works | `make clean-run`, check D0 fails the run if any store survives the teardown |
 | Reference data load | Works | D1 to D9, every table matches its CSV |
 | Cost arithmetic, ranking, and determinism | Works | A1 to A9 |

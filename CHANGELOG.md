@@ -7,6 +7,19 @@ Dates are the dates the work was committed, not the dates it was planned.
 
 ## [Unreleased]
 
+### Portability, map provenance, and reference cases, 15 November 2026
+- `scripts/host-info.sh` gives every script the same host facts on macOS and Linux, and replaces the
+  BSD only `date` flags.
+- `deploy/compose.yaml` maps `host.docker.internal` to the host gateway so Prometheus can scrape the
+  API on Linux.
+- The osmium clipping image is pinned by digest. `make osrm` records the source URL, both image
+  digests, each stage's time, and the source, clipped, and graph checksums in
+  `data/osrm/nyc-metro.provenance.txt`, and validation copies the latest record into its run.
+- `.github/workflows/level3-linux.yml` builds the map from source and runs the clean restart on
+  Ubuntu, and keeps the evidence as an artifact.
+- `eval/reference/` holds five hand computed reference cases with assumptions and dated sources,
+  checked exactly by `make reference`.
+
 ### Hardening and reproducibility, 8 November 2026
 - README rewritten around a three level quick start, with prerequisites, tested hardware, expected
   output, configuration and credentials, data sources and redistribution, and troubleshooting.

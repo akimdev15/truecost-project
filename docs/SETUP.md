@@ -16,7 +16,7 @@ Start with Level 1. It needs no API keys, no map data, and no running stack.
 | Git | any recent | `git --version` | |
 | make | any recent | `make --version` | preinstalled on macOS and Linux |
 | curl and jq | any recent | `jq --version` | required for Level 3, otherwise only for manual request checks |
-| nc and shasum | preinstalled on macOS | `which nc shasum` | required for Level 3 |
+| nc and shasum | preinstalled on macOS and Ubuntu | `which nc shasum` | required for Level 3 |
 | k6 | v2.3.0 | `k6 version` | only for the load smoke, optional |
 
 Maven is not in the list on purpose. The repository ships the Maven wrapper, so `./mvnw` downloads
@@ -153,8 +153,11 @@ curl -s localhost:8080/api/v1/trips/plan \
 ## Level 3, validate a clean restart
 
 Level 3 needs Level 2's prepared map in `data/osrm` and the jq, nc, and shasum tools above. It
-has only been run on macOS. The environment snapshot uses `sw_vers` and `sysctl`, and
-`observe-prefetch.sh` uses BSD `date -r`, so on Linux those parts will need changing.
+runs on macOS and Linux. Platform differences live in `scripts/host-info.sh`. On Linux, Prometheus
+reaches the host through the `host-gateway` mapping in `deploy/compose.yaml`, which Docker Desktop
+does not need but tolerates. The `level3-linux` workflow, started by hand from the Actions page,
+builds the map from source on an Ubuntu runner and runs the clean restart there, and keeps its logs
+and the run directory as an artifact. On 15 November 2026 it passed 42 of 42.
 
 ```
 ./mvnw -B verify       # builds the two jars the run uses
