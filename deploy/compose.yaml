@@ -100,6 +100,10 @@ services:
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
     command:
       - --config.file=/etc/prometheus/prometheus.yml
+    # Docker Desktop defines host.docker.internal itself. Linux Docker does not, so the scrape targets
+    # in prometheus.yml would not resolve there without this mapping to the host gateway.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   tempo:
     image: grafana/tempo:2.7.1

@@ -12,6 +12,7 @@ OUT="${1:?pass an output directory}"
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
 cd "$(dirname "$0")/.."
+. scripts/host-info.sh
 
 API="http://localhost:8080"
 API_JAR="target/truecost-0.0.1-SNAPSHOT.jar"
@@ -23,7 +24,7 @@ API_JAR="target/truecost-0.0.1-SNAPSHOT.jar"
     echo "k6 script  $(shasum -a 256 eval/k6/baseline.js | cut -c1-16)"
     echo "script     $(shasum -a 256 "$0" | cut -c1-16)"
     echo "k6         $(k6 version 2>/dev/null | head -1)"
-    echo "machine    $(sysctl -n machdep.cpu.brand_string 2>/dev/null), $(( $(sysctl -n hw.memsize) / 1073741824 )) GB, disk free $(df -h . | tail -1 | awk '{print $4}')"
+    echo "machine    $(host_os), $(host_cpu_model), $(host_memory_gb) GB, disk free $(df -h . | tail -1 | awk '{print $4}')"
     echo "providers  rental synthetic, fuel fallback, hotel synthetic, no credentials set"
 } > "$OUT/metadata.txt"
 

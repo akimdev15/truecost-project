@@ -14,6 +14,7 @@ OUT="${1:?pass an output directory}"
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
 cd "$(dirname "$0")/.."
+. scripts/host-info.sh
 PLAN="http://localhost:8080/api/v1/trips/plan"
 DEPART_DATE="2026-10-30"
 DEPART_TIME="22:00:00Z"
@@ -46,7 +47,7 @@ echo "route,in_coverage,rental_days_requested,personal_tag,company,rental_days,c
 
 while IFS='|' read -r id olat olng pcode dlat dlng dcode cov; do
     for d in $DAYS; do
-        ret=$(date -j -v+"${d}"d -f %Y-%m-%d "$DEPART_DATE" +%Y-%m-%d)
+        ret=$(date_plus_days "$DEPART_DATE" "$d")
         for tag in false true; do
             body=$(jq -n --argjson olat "$olat" --argjson olng "$olng" --arg pc "$pcode" \
                 --argjson dlat "$dlat" --argjson dlng "$dlng" --arg dc "$dcode" \

@@ -9,6 +9,8 @@
 #   scripts/observe-prefetch.sh <output-dir>
 set -uo pipefail
 
+. "$(dirname "$0")/host-info.sh"
+
 cd "$(dirname "$0")/.."
 
 OUT="${1:?pass the run directory}"
@@ -37,7 +39,7 @@ echo "$(stamp)  sent 6 searches for the golden route, threshold is 5 in a 15 min
 
 now=$(date +%s)
 close=$(( (now / HOP_SECONDS + 1) * HOP_SECONDS + GRACE_SECONDS + 15 ))
-echo "$(stamp)  earliest window holding them closes at $(date -u -r $((close - GRACE_SECONDS - 15)) +%H:%M:%S), waiting $((close - now)) s for close plus grace" | tee -a "$LOG"
+echo "$(stamp)  earliest window holding them closes at $(utc_clock $((close - GRACE_SECONDS - 15))), waiting $((close - now)) s for close plus grace" | tee -a "$LOG"
 
 sleep $(( close - $(date +%s) ))
 search

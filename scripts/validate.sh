@@ -10,6 +10,7 @@
 set -uo pipefail
 
 cd "$(dirname "$0")/.."
+. scripts/host-info.sh
 
 OUT="${1:-docs/evidence/hs3/run-$(date +%Y%m%d-%H%M%S)}"
 mkdir -p "$OUT"
@@ -49,9 +50,9 @@ sha() {
 # Environment snapshot. Names the exact artifacts every result below was produced by.
 {
     echo "captured   $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    echo "os         $(sw_vers -productName 2>/dev/null) $(sw_vers -productVersion 2>/dev/null) $(uname -m)"
-    echo "cpu        $(sysctl -n hw.ncpu 2>/dev/null) cores"
-    echo "memory     $(( $(sysctl -n hw.memsize 2>/dev/null || echo 0) / 1073741824 )) GB host"
+    echo "os         $(host_os)"
+    echo "cpu        $(host_cpus) cores"
+    echo "memory     $(host_memory_gb) GB host"
     echo "disk free  $(df -h . | tail -1 | awk '{print $4 " of " $2 ", " $5 " used"}')"
     echo "java       $(java -version 2>&1 | head -1)"
     echo "maven      $(./mvnw -v 2>/dev/null | head -1)"
@@ -77,6 +78,11 @@ sha() {
     echo "  $(shasum -a 256 data/osrm/nyc-metro.osm.pbf | cut -c1-16)  data/osrm/nyc-metro.osm.pbf, the clipped source extract"
     echo "  $(cat data/osrm/nyc-metro.osrm.* | shasum -a 256 | cut -c1-16)  data/osrm/nyc-metro.osrm.*, the prepared graph, all files in name order"
     for f in data/seeds/*.csv; do echo "  $(shasum -a 256 "$f" | cut -c1-16)  $f"; done
+    if [[ -f data/osrm/nyc-metro.provenance.txt ]]; then
+        echo
+        echo "map preparation record, data/osrm/nyc-metro.provenance.txt, latest run"
+        awk '/^run /{block=""} {block=block $0 "\n"} END{printf "%s", block}' data/osrm/nyc-metro.provenance.txt | sed 's/^/  /'
+    fi
     echo
     echo "environment variables in the validation shell, names only. The jars' own settings are in"
     echo "process-settings.txt when the run came from scripts/clean-run.sh"

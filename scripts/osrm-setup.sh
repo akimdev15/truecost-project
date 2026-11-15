@@ -28,7 +28,9 @@ DATA_DIR="data/osrm"
 SOURCE_NAME="us-northeast-latest"
 SOURCE_URL="https://download.geofabrik.de/north-america/us-northeast-latest.osm.pbf"
 OSRM_IMAGE="ghcr.io/project-osrm/osrm-backend@sha256:a7091038e39a73659767f34ef2d389909b42ea80b09bd2bdca482dce2991cbad"
-OSMIUM_IMAGE="stefda/osmium-tool"
+# Pinned by digest like the OSRM image, so a later push to the tag cannot change how the map is
+# clipped. The image is built for amd64 only and runs under emulation on Apple Silicon.
+OSMIUM_IMAGE="stefda/osmium-tool@sha256:d2321d0e926f77ead7547b4b35f5cf98d9fd74043673cecc4fc2bb7cce06ff63"
 
 # Covers New York City, all of New Jersey, Connecticut, the Hudson Valley up through New Paltz,
 # and Long Island out to Montauk. Boston and Washington DC fall outside it on purpose, they are
@@ -48,6 +50,19 @@ case "$EXTENT" in
 esac
 
 mkdir -p "$DATA_DIR"
+
+# Every run appends to a provenance record beside the map, so a map can always be traced to the
+# extract, the images, and the timings that produced it.
+PROVENANCE="$DATA_DIR/$TARGET_NAME.provenance.txt"
+stage_started=0
+stage_begin() { stage_started=$(date +%s); }
+stage_end() { echo "  $1  $(( $(date +%s) - stage_started )) s" | tee -a "$PROVENANCE"; }
+{
+    echo "run        $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    echo "extent     $EXTENT, clip box $CLIP_BBOX"
+    echo "osrm       $OSRM_IMAGE"
+    echo "osmium     $OSMIUM_IMAGE"
+} >> "$PROVENANCE"
 
 run_osrm() {
     docker run --rm -v "$(pwd)/$DATA_DIR:/data" "$OSRM_IMAGE" "$@"
@@ -73,8 +88,12 @@ elif step_needed "$source_pbf"; then
     fi
     echo "$resolved_url" > "$source_pbf.tmp.url"
     echo "downloading $resolved_url, this is close to two gigabytes, rerun to resume if it stops"
+    echo "  source url $resolved_url" >> "$PROVENANCE"
+    stage_begin
     curl -L --fail -C - -o "$source_pbf.tmp" "$resolved_url"
     mv "$source_pbf.tmp" "$source_pbf"
+    stage_end "download"
+    echo "  source sha256 $(shasum -a 256 "$source_pbf" | cut -c1-64)" >> "$PROVENANCE"
     rm -f "$source_pbf.tmp.url"
 else
     echo "reusing existing source extract at $source_pbf, pass --force to redownload"
@@ -83,8 +102,10 @@ fi
 if [[ "$EXTENT" == "metro" ]]; then
     if step_needed "$target_pbf"; then
         echo "clipping to the NYC metro bounding box $CLIP_BBOX, this keeps osrm-extract inside a laptop memory budget"
+        stage_begin
         docker run --rm -v "$(pwd)/$DATA_DIR:/data" "$OSMIUM_IMAGE" \
             osmium extract -b "$CLIP_BBOX" "/data/$SOURCE_NAME.osm.pbf" -o "/data/$TARGET_NAME.osm.pbf"
+        stage_end "clip"
     else
         echo "reusing existing clipped extract at $target_pbf, pass --force to reclip"
     fi
@@ -98,7 +119,9 @@ if step_needed "$extract_marker"; then
     echo "running osrm-extract with the car profile, this builds the routing graph from the raw map data"
     echo "if this is killed with no error, Docker ran out of memory, stop the app stack first with"
     echo "  docker compose -f deploy/compose.yaml --profile app stop"
+    stage_begin
     run_osrm osrm-extract -p /opt/car.lua "/data/$TARGET_NAME.osm.pbf"
+    stage_end "osrm-extract"
 else
     echo "reusing existing extract graph at $extract_marker, pass --force to rerun osrm-extract"
 fi
@@ -106,7 +129,9 @@ fi
 partition_marker="$DATA_DIR/$TARGET_NAME.osrm.partition"
 if step_needed "$partition_marker"; then
     echo "running osrm-partition, this builds the multi level partition used for fast queries"
+    stage_begin
     run_osrm osrm-partition "/data/$TARGET_NAME.osrm"
+    stage_end "osrm-partition"
 else
     echo "reusing existing partition at $partition_marker, pass --force to rerun osrm-partition"
 fi
@@ -114,7 +139,9 @@ fi
 customize_marker="$DATA_DIR/$TARGET_NAME.osrm.cell_metrics"
 if step_needed "$customize_marker"; then
     echo "running osrm-customize, this computes the cell weights the multi level Dijkstra query needs"
+    stage_begin
     run_osrm osrm-customize "/data/$TARGET_NAME.osrm"
+    stage_end "osrm-customize"
 else
     echo "reusing existing customized data at $customize_marker, pass --force to rerun osrm-customize"
 fi
@@ -123,6 +150,10 @@ echo
 echo "osrm data preparation complete, serving file is $DATA_DIR/$TARGET_NAME.osrm"
 echo "recording the input checksum so an accuracy run can name the map it was measured against:"
 shasum -a 256 "$target_pbf" | tee "$DATA_DIR/$TARGET_NAME.osm.pbf.sha256"
+{
+    echo "  clipped extract sha256 $(cut -c1-64 "$DATA_DIR/$TARGET_NAME.osm.pbf.sha256")"
+    echo "  prepared graph sha256 $(cat "$DATA_DIR/$TARGET_NAME".osrm.* | shasum -a 256 | cut -c1-64), all .osrm files in name order"
+} | tee -a "$PROVENANCE"
 echo
 echo "bring up the routing service with, docker compose -f deploy/compose.yaml up -d osrm"
 echo "then check it with, curl -s 'localhost:5001/route/v1/driving/-73.99,40.75;-75.16,39.95?overview=false' | jq '.routes[0].duration'"

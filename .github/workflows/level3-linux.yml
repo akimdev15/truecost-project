@@ -1,0 +1,51 @@
+name: level3-linux
+
+# The full reproducibility path on Linux, from a clean runner with no prepared map. It downloads
+# the OpenStreetMap extract, clips and prepares it with the pinned images, builds the jars, and
+# runs the clean restart validation. It is started by hand because it downloads 1.8 GB and takes
+# about half an hour, and its evidence is kept as a run artifact.
+on:
+  workflow_dispatch:
+
+jobs:
+  level3:
+    name: map from source, then clean restart validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      # The runner image ships toolchains this job never uses. Removing them leaves room for the
+      # map, the container images, and the Maven cache together.
+      - name: free disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h .
+      - name: host facts
+        run: |
+          . scripts/host-info.sh
+          echo "os $(host_os), cpus $(host_cpus), memory $(host_memory_gb) GB"
+          docker version --format 'docker {{.Server.Version}}'
+      - name: prepare the map from source
+        run: make osrm 2>&1 | tee osrm-setup.log
+      - name: rerun the map preparation, every stage should be skipped
+        run: make osrm 2>&1 | tee osrm-setup-rerun.log
+      - name: build the jars
+        run: ./mvnw -B -q package -DskipTests
+      - name: clean restart validation
+        run: make clean-run
+      - name: keep the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: level3-linux-evidence
+          path: |
+            osrm-setup.log
+            osrm-setup-rerun.log
+            data/osrm/nyc-metro.provenance.txt
+            data/osrm/nyc-metro.osm.pbf.sha256
+            docs/evidence/hs3/
