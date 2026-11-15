@@ -1,0 +1,24 @@
+{
+  "id": "missing-fields",
+  "purpose": "A request missing required fields must be rejected with every missing field named.",
+  "request": {},
+  "assumptions": [
+    "departureAt, returnAt, pickupLocationCode, and destinationCode are required."
+  ],
+  "sources": [
+    {
+      "source": "docs/API.md",
+      "capturedOn": "2026-11-15"
+    }
+  ],
+  "expect": {
+    "http": 400,
+    "errorMentions": [
+      "departureAt",
+      "returnAt",
+      "pickupLocationCode",
+      "destinationCode"
+    ]
+  },
+  "scope": "Verifies input validation."
+}

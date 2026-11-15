@@ -1,0 +1,98 @@
+{
+  "id": "gwb-offpeak-tag",
+  "purpose": "The same trip with the renter's own E-ZPass, which should beat every company product.",
+  "request": {
+    "originLat": 40.8509,
+    "originLng": -73.9701,
+    "pickupLocationCode": "EWR",
+    "destLat": 40.8417,
+    "destLng": -73.9394,
+    "destinationCode": "WHT",
+    "departureAt": "2026-11-21T15:00:00Z",
+    "returnAt": "2026-11-21T23:00:00Z",
+    "hasPersonalEzpass": true,
+    "carClass": "MIDSIZE",
+    "rentalRateOverrides": [
+      {
+        "companyCode": "AVIS",
+        "companyName": "Avis",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "BUDGET",
+        "companyName": "Budget",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "DOLLAR",
+        "companyName": "Dollar",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "ENTERPRISE",
+        "companyName": "Enterprise",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "HERTZ",
+        "companyName": "Hertz",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "THRIFTY",
+        "companyName": "Thrifty",
+        "totalCents": 10000
+      }
+    ]
+  },
+  "assumptions": [
+    "Saturday 21 November 2026, depart 10:00 Eastern, return 18:00 Eastern the same day, so the rental is 1 day.",
+    "The only tolled facility is the George Washington Bridge, eastbound into New York. The Port Authority tolls only that direction, so the return leg is free.",
+    "The car reaches the bridge within minutes, before 11:00, which is the weekend off peak window. E-ZPass off peak is 14.79. Tolls by Mail is 23.30 at all hours.",
+    "Washington Heights is north of 60th Street, outside the congestion relief zone, so congestion is 0.",
+    "The toll is crossed on 1 day, so a fee charged per usage day is charged once.",
+    "Rental base rates are placeholders of 100.00 per company, not quotes. They only fix the rental line so it cannot vary.",
+    "With a personal tag the toll is the E-ZPass off peak rate 14.79 and no program fee, which is below every company candidate above."
+  ],
+  "sources": [
+    {
+      "source": "PANYNJ tariff effective 4 January 2026, as recorded in data/seeds/SOURCES.md, Port Authority section",
+      "capturedOn": "2026-07-17"
+    },
+    {
+      "source": "Company toll program terms, as recorded in data/seeds/SOURCES.md, rental company toll programs section",
+      "capturedOn": "2026-07-17"
+    }
+  ],
+  "expect": {
+    "http": 200,
+    "companies": {
+      "HERTZ": {
+        "strategy": "PERSONAL_TAG",
+        "totalCents": 1479
+      },
+      "AVIS": {
+        "strategy": "PERSONAL_TAG",
+        "totalCents": 1479
+      },
+      "BUDGET": {
+        "strategy": "PERSONAL_TAG",
+        "totalCents": 1479
+      },
+      "DOLLAR": {
+        "strategy": "PERSONAL_TAG",
+        "totalCents": 1479
+      },
+      "THRIFTY": {
+        "strategy": "PERSONAL_TAG",
+        "totalCents": 1479
+      },
+      "ENTERPRISE": {
+        "strategy": "PERSONAL_TAG",
+        "totalCents": 1479
+      }
+    }
+  },
+  "toleranceCents": 0,
+  "scope": "Verifies the computation against the published tariff. Not evidence for SC1."
+}

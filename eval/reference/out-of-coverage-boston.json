@@ -1,0 +1,30 @@
+{
+  "id": "out-of-coverage-boston",
+  "purpose": "A trip outside the area whose tolls are seeded must be refused rather than priced.",
+  "request": {
+    "originLat": 40.7505,
+    "originLng": -73.9934,
+    "pickupLocationCode": "EWR",
+    "destLat": 42.3601,
+    "destLng": -71.0589,
+    "destinationCode": "BOS",
+    "departureAt": "2026-11-20T23:00:00Z",
+    "returnAt": "2026-11-22T19:00:00Z",
+    "hasPersonalEzpass": false,
+    "carClass": "MIDSIZE"
+  },
+  "assumptions": [
+    "Boston lies outside every rectangle in data/seeds/coverage_regions.csv."
+  ],
+  "sources": [
+    {
+      "source": "data/seeds/coverage_regions.csv",
+      "capturedOn": "2026-10-25"
+    }
+  ],
+  "expect": {
+    "http": 422,
+    "code": "OUT_OF_COVERAGE"
+  },
+  "scope": "Verifies FR14."
+}

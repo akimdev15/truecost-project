@@ -1,0 +1,136 @@
+{
+  "id": "gwb-offpeak-no-tag",
+  "purpose": "One unambiguous toll crossing, priced by hand from the published tariff and every company's program terms. Checks crossing detection, time of day pricing, and the toll decision end to end.",
+  "request": {
+    "originLat": 40.8509,
+    "originLng": -73.9701,
+    "pickupLocationCode": "EWR",
+    "destLat": 40.8417,
+    "destLng": -73.9394,
+    "destinationCode": "WHT",
+    "departureAt": "2026-11-21T15:00:00Z",
+    "returnAt": "2026-11-21T23:00:00Z",
+    "hasPersonalEzpass": false,
+    "carClass": "MIDSIZE",
+    "rentalRateOverrides": [
+      {
+        "companyCode": "AVIS",
+        "companyName": "Avis",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "BUDGET",
+        "companyName": "Budget",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "DOLLAR",
+        "companyName": "Dollar",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "ENTERPRISE",
+        "companyName": "Enterprise",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "HERTZ",
+        "companyName": "Hertz",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "THRIFTY",
+        "companyName": "Thrifty",
+        "totalCents": 10000
+      }
+    ]
+  },
+  "assumptions": [
+    "Saturday 21 November 2026, depart 10:00 Eastern, return 18:00 Eastern the same day, so the rental is 1 day.",
+    "The only tolled facility is the George Washington Bridge, eastbound into New York. The Port Authority tolls only that direction, so the return leg is free.",
+    "The car reaches the bridge within minutes, before 11:00, which is the weekend off peak window. E-ZPass off peak is 14.79. Tolls by Mail is 23.30 at all hours.",
+    "Washington Heights is north of 60th Street, outside the congestion relief zone, so congestion is 0.",
+    "The toll is crossed on 1 day, so a fee charged per usage day is charged once.",
+    "Rental base rates are placeholders of 100.00 per company, not quotes. They only fix the rental line so it cannot vary.",
+    "Hertz, Dollar, Thrifty per crossing: 9.99 for the 1 usage day plus the toll at the plate rate 23.30, which is 33.29.",
+    "Avis and Budget per crossing: 6.95 for the 1 rental day, cap not reached, plus 23.30, which is 30.25.",
+    "Enterprise per crossing: 4.95 for the 1 usage day plus the toll at the E-ZPass rate 14.79, which is 19.74.",
+    "Unlimited, 1 day: Hertz 27.99, Avis and Budget 25.99, Dollar and Thrifty 21.49. Tolls included, no congestion to add.",
+    "The cheapest per company is therefore the unlimited plan, except Enterprise, which has no unlimited plan.",
+    "There is no overnight stay, so no hotel is priced. Per docs/API.md, hotelCents is 0 and provenance.hotelSource is null, and freshness.hotel reads UNAVAILABLE."
+  ],
+  "sources": [
+    {
+      "source": "PANYNJ tariff effective 4 January 2026, as recorded in data/seeds/SOURCES.md, Port Authority section",
+      "capturedOn": "2026-07-17"
+    },
+    {
+      "source": "Company toll program terms, as recorded in data/seeds/SOURCES.md, rental company toll programs section",
+      "capturedOn": "2026-07-17"
+    }
+  ],
+  "expect": {
+    "http": 200,
+    "companies": {
+      "HERTZ": {
+        "strategy": "COMPANY_UNLIMITED",
+        "totalCents": 2799,
+        "candidates": {
+          "COMPANY_PER_CROSSING": 3329,
+          "COMPANY_UNLIMITED": 2799
+        }
+      },
+      "AVIS": {
+        "strategy": "COMPANY_UNLIMITED",
+        "totalCents": 2599,
+        "candidates": {
+          "COMPANY_PER_CROSSING": 3025,
+          "COMPANY_UNLIMITED": 2599
+        }
+      },
+      "BUDGET": {
+        "strategy": "COMPANY_UNLIMITED",
+        "totalCents": 2599,
+        "candidates": {
+          "COMPANY_PER_CROSSING": 3025,
+          "COMPANY_UNLIMITED": 2599
+        }
+      },
+      "DOLLAR": {
+        "strategy": "COMPANY_UNLIMITED",
+        "totalCents": 2149,
+        "candidates": {
+          "COMPANY_PER_CROSSING": 3329,
+          "COMPANY_UNLIMITED": 2149
+        }
+      },
+      "THRIFTY": {
+        "strategy": "COMPANY_UNLIMITED",
+        "totalCents": 2149,
+        "candidates": {
+          "COMPANY_PER_CROSSING": 3329,
+          "COMPANY_UNLIMITED": 2149
+        }
+      },
+      "ENTERPRISE": {
+        "strategy": "COMPANY_PER_CROSSING",
+        "totalCents": 1974,
+        "candidates": {
+          "COMPANY_PER_CROSSING": 1974
+        }
+      }
+    },
+    "rentalCents": 10000,
+    "provenance": {
+      "rentalSource": "USER_SUPPLIED",
+      "fuelPriceIsFallback": true,
+      "hotelSource": null
+    },
+    "freshness": {
+      "fuel": "UNAVAILABLE",
+      "hotel": "UNAVAILABLE"
+    }
+  },
+  "toleranceCents": 0,
+  "scope": "Verifies the computation against published tariffs and program terms. It does not verify real market prices, so it is not evidence for SC1."
+}

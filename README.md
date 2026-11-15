@@ -32,6 +32,21 @@ make demo-check           # Level 2, confirms the API, the map, and a real plan 
 make clean-run            # Level 3, stop make run and make prefetch first
 ```
 
+### What each step needs
+
+| Step | Internet | Prepared map | Docker memory | First run time |
+| --- | --- | --- | --- | --- |
+| `./mvnw -B verify`, the smoke test | Yes, first run only, Maven and test images | No | 4 GB | 1 to 15 minutes, depending on the connection |
+| `make osrm` | Yes, a 1.8 GB download | Produces it | 8 GB | about 10 minutes on a fast connection, hours on a slow one |
+| `make up`, `make seed`, `make run`, `make prefetch`, the full application | Yes, first run only, about 3 GB of images | Yes | 8 GB | a few minutes once images are pulled |
+| `make clean-run`, the complete reproducibility test | No, after the above | Yes | 8 GB | about 2 minutes |
+| `make reference`, the hand computed reference cases | No | Yes, and the stack running | 8 GB | seconds |
+
+Three levels, in plain terms. The smoke test proves the code builds and every test passes. The
+full application run proves the system plans a real trip. The complete reproducibility test proves
+a clean restart from nothing passes every validation check, on macOS here and on Linux in the
+`level3-linux` workflow, which also builds the map from source.
+
 `docs/SETUP.md` walks through each level in detail, with what each step costs and what to do when it
 fails. `make up-all` runs the API and prefetcher in containers instead of on the host, but its first
 build resolves every Maven dependency inside Docker and takes half an hour or more.
@@ -152,6 +167,7 @@ make eval-selftest   # check the accuracy scoring math, no stack needed
 make eval            # score the complete golden scenarios against the running API
 make baseline        # cold, warm, and skewed latency runs and the cold start test
 make audit           # check every doc link, make target, script, and config variable resolves
+make reference       # run the hand computed reference cases against the running API, exact comparison
 ```
 
 The tests start their own Postgres, Redis, Kafka, and Apicurio and stub every outbound provider

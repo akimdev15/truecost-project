@@ -91,6 +91,15 @@ docker compose -f deploy/compose.yaml --profile app stop
 make osrm
 ```
 
+Measured on 15 November 2026 from a fresh clone with no map files, on macOS with the Supabase
+containers of another project also running, on a connection of about 8 to 12 MB/s. The download was
+interrupted at 174 MB on purpose and resumed from that byte on the next run. Download 210 s, clip
+27 s, `osrm-extract` 86 s, partition 34 s, customize 9 s, 379 s in total. A second `make osrm`
+skipped every stage. Each run appends the resolved source URL, both image digests, every stage
+time, and the source, clipped extract, and prepared graph checksums to
+`data/osrm/nyc-metro.provenance.txt`, and every validation run copies the latest block into its
+environment record.
+
 The script prints and saves a sha256 of the map file it prepared. Record that number alongside any
 accuracy measurement, because a different map produces different routes and therefore different
 detected toll crossings.

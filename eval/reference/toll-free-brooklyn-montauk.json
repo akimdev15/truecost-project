@@ -1,0 +1,94 @@
+{
+  "id": "toll-free-brooklyn-montauk",
+  "purpose": "A trip with no tolled facility and no congestion zone entry, where declining every program is correct.",
+  "request": {
+    "originLat": 40.6782,
+    "originLng": -73.9442,
+    "pickupLocationCode": "BKN",
+    "destLat": 41.0362,
+    "destLng": -71.9509,
+    "destinationCode": "MTK",
+    "departureAt": "2026-11-20T23:00:00Z",
+    "returnAt": "2026-11-22T19:00:00Z",
+    "hasPersonalEzpass": false,
+    "carClass": "MIDSIZE",
+    "rentalRateOverrides": [
+      {
+        "companyCode": "AVIS",
+        "companyName": "Avis",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "BUDGET",
+        "companyName": "Budget",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "DOLLAR",
+        "companyName": "Dollar",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "ENTERPRISE",
+        "companyName": "Enterprise",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "HERTZ",
+        "companyName": "Hertz",
+        "totalCents": 10000
+      },
+      {
+        "companyCode": "THRIFTY",
+        "companyName": "Thrifty",
+        "totalCents": 10000
+      }
+    ]
+  },
+  "assumptions": [
+    "Crown Heights to Montauk by the Long Island Expressway and local roads has no tolled facility.",
+    "The route never enters Manhattan south of 60th Street, so there is no congestion charge.",
+    "Every per crossing program charges only when a toll is used, so its fee is 0, and no arrangement costs 0."
+  ],
+  "sources": [
+    {
+      "source": "PANYNJ tariff effective 4 January 2026, as recorded in data/seeds/SOURCES.md, Port Authority section",
+      "capturedOn": "2026-07-17"
+    },
+    {
+      "source": "Company toll program terms, as recorded in data/seeds/SOURCES.md, rental company toll programs section",
+      "capturedOn": "2026-07-17"
+    }
+  ],
+  "expect": {
+    "http": 200,
+    "companies": {
+      "HERTZ": {
+        "strategy": "NO_ARRANGEMENT",
+        "totalCents": 0
+      },
+      "AVIS": {
+        "strategy": "NO_ARRANGEMENT",
+        "totalCents": 0
+      },
+      "BUDGET": {
+        "strategy": "NO_ARRANGEMENT",
+        "totalCents": 0
+      },
+      "DOLLAR": {
+        "strategy": "NO_ARRANGEMENT",
+        "totalCents": 0
+      },
+      "THRIFTY": {
+        "strategy": "NO_ARRANGEMENT",
+        "totalCents": 0
+      },
+      "ENTERPRISE": {
+        "strategy": "NO_ARRANGEMENT",
+        "totalCents": 0
+      }
+    }
+  },
+  "toleranceCents": 0,
+  "scope": "Verifies the toll free path. Not evidence for SC1."
+}
