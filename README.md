@@ -195,7 +195,7 @@ from CI. Each row cites the validation check behind it, from `scripts/validate.s
 | Kafka publish, schema registry, and hot route prefetch | Works | K1 to K4, and `scripts/observe-prefetch.sh` |
 | Metrics and tracing | Works | M1, M2, O1, O2 |
 | Accuracy against real costs | Not measured | the runner works, the golden set has 0 of 20 complete scenarios, I-02 |
-| Latency under load | Not measured | `make baseline` is built, no run recorded yet, R9 |
+| Latency and cache under load | Works, as a floor | `make baseline` on 15 November, warm p95 14 ms, cold p95 77 ms, skewed hit rate 99.6 percent at 50 per second, every provider on its fallback, R9 |
 
 `PLAN.md` is the phase plan, `CHANGELOG.md` is what shipped, and where they disagree the changelog
 is right.

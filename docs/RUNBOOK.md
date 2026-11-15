@@ -643,3 +643,20 @@ python3 scripts/eval.py --out /tmp/eval-run
 ```
 
 The summary reports, overall and again per duration band and per crossing band, the error per component in cents and percent, SC1 as MAPE on the true total against the 8 percent limit, SC2 as ranking inversions against a target of zero, and toll strategy agreement per company. It also counts options whose inputs came from a fallback, because a synthetic hotel or fuel price would be scored as model error when it is not.
+
+## Latency and cache baseline, issue 8
+
+Run on 15 November 2026 against a stack started with `KEEP_RUNNING=true scripts/clean-run.sh`.
+Runs the cold, warm, and skewed k6 profiles in that order, reads the cache counters from Prometheus
+before and after each so every hit rate covers one profile, then restarts the API six times and
+times its first request, half of them with the map hash running alongside. Takes about seven
+minutes:
+
+```
+make baseline OUT=docs/evidence/baseline/<label>
+```
+
+`summary.txt` in the output directory has the percentiles, the hit rate per cache class, and the
+six cold start timings. Each profile's raw k6 output and summary JSON sit beside it. Every
+provider runs on its fallback, so treat the numbers as floors for SC4 to SC6.
+
